@@ -241,17 +241,31 @@ const Packages = () => {
   ];
 
   const filteredPackages = packages.filter(pkg => {
-    const matchesSearch = pkg.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         pkg.destination.toLowerCase().includes(searchTerm.toLowerCase());
+    // Search filter
+    const matchesSearch = searchTerm === "" || 
+      pkg.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pkg.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pkg.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Location filters
     const matchesContinent = selectedContinent === "all" || pkg.continent === selectedContinent;
     const matchesCountry = selectedCountry === "all" || pkg.country === selectedCountry;
+    
+    // Season filter
     const matchesSeason = selectedSeason === "all" || pkg.bestSeason === selectedSeason;
+    
+    // Category filter
     const matchesCategory = selectedCategory === "all" || pkg.category === selectedCategory;
     
-    let matchesDuration = true;
-    if (selectedDuration === "short") matchesDuration = pkg.duration <= 7;
-    else if (selectedDuration === "medium") matchesDuration = pkg.duration >= 8 && pkg.duration <= 14;
-    else if (selectedDuration === "long") matchesDuration = pkg.duration >= 15;
+    // Duration filter
+    let matchesDuration = selectedDuration === "all";
+    if (selectedDuration === "short") {
+      matchesDuration = pkg.duration >= 1 && pkg.duration <= 7;
+    } else if (selectedDuration === "medium") {
+      matchesDuration = pkg.duration >= 8 && pkg.duration <= 14;
+    } else if (selectedDuration === "long") {
+      matchesDuration = pkg.duration >= 15;
+    }
     
     return matchesSearch && matchesContinent && matchesCountry && matchesSeason && matchesDuration && matchesCategory;
   });
@@ -314,7 +328,9 @@ const Packages = () => {
             {/* Filters Row 1 */}
             <Select value={selectedContinent} onValueChange={(value) => {
               setSelectedContinent(value);
-              setSelectedCountry("all"); // Reset country when continent changes
+              if (value !== "all") {
+                setSelectedCountry("all"); // Reset country when continent changes
+              }
             }}>
               <SelectTrigger className="h-12">
                 <SelectValue placeholder="Continent" />
