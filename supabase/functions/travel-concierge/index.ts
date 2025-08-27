@@ -164,22 +164,21 @@ serve(async (req) => {
       Restaurants : ${sampleRestaurants?.map(r => `${r.name} (${r.cuisine_type}, ${r.city})`).join(', ')}`;
     }
 
-    console.log('Sending request to Hugging Face API with DeepSeek...');
+    console.log('Sending request to Hugging Face API (Zephyr model)...');
 
-    // Use Hugging Face Inference API for DeepSeek
-    const response = await fetch('https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B', {
+    // Use Hugging Face Inference API with a widely available instruct model
+    const response = await fetch('https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${huggingFaceApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputs: `<|im_start|>system\n${systemPrompt + contextInfo}<|im_end|>\n<|im_start|>user\n${message}<|im_end|>\n<|im_start|>assistant\n`,
+        inputs: `System: ${systemPrompt + contextInfo}\nUser: ${message}\nAssistant:`,
         parameters: {
-          max_new_tokens: 2000,
+          max_new_tokens: 1000,
           temperature: 0.7,
-          do_sample: true,
-          stop: ["<|im_end|>"]
+          do_sample: true
         },
         options: {
           wait_for_model: true
