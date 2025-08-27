@@ -10,6 +10,7 @@ import Destinations from "./pages/Destinations";
 import DestinationDetail from "./pages/DestinationDetail";
 import Packages from "./pages/Packages";
 import Activities from "./pages/Activities";
+import Restaurants from "./pages/Restaurants";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import CGU from "./pages/CGU";
@@ -39,6 +40,7 @@ const App = () => (
                   <Route path="/destinations/:slug" element={<DestinationDetail />} />
                   <Route path="/packages" element={<Packages />} />
                   <Route path="/activities" element={<Activities />} />
+                  <Route path="/restaurants" element={<Restaurants />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/admin" element={<Admin />} />
                   <Route path="/cgu" element={<CGU />} />

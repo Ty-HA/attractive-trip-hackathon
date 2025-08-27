@@ -30,6 +30,7 @@ const Header = () => {
             <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">{t('nav.destinations')}</Link>
             <Link to="/packages" className="text-foreground hover:text-primary transition-colors">{t('nav.packages')}</Link>
             <Link to="/activities" className="text-foreground hover:text-primary transition-colors">{t('nav.activities')}</Link>
+            <Link to="/restaurants" className="text-foreground hover:text-primary transition-colors">{t('nav.restaurants')}</Link>
             <LanguageSelector />
             
             {/* Auth Section */}
