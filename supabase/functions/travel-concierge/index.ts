@@ -22,10 +22,10 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
+    const huggingFaceApiKey = Deno.env.get('HUGGING_FACE_API_KEY');
     
-    if (!deepseekApiKey) {
-      throw new Error('DeepSeek API key not configured');
+    if (!huggingFaceApiKey) {
+      throw new Error('Hugging Face API key not configured');
     }
 
     // Handle specific actions (bookings, searches, etc.)
@@ -76,6 +76,21 @@ serve(async (req) => {
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           });
 
+        case 'search_restaurants':
+          const { data: restaurants } = await supabase
+            .from('restaurants')
+            .select('*')
+            .eq('is_available', true)
+            .ilike('name', `%${action.query || ''}%`);
+          
+          return new Response(JSON.stringify({ 
+            type: 'search_results',
+            results: restaurants,
+            message: `J'ai trouvé ${restaurants?.length || 0} restaurants disponibles.`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
         case 'get_package_details':
           const { data: packageDetails } = await supabase
             .from('packages')
@@ -95,7 +110,7 @@ serve(async (req) => {
 
     // Create enhanced system prompt with booking capabilities
     let systemPrompt = `Tu es un assistant de voyage conversationnel intelligent qui peut aider les utilisateurs à :
-    - Rechercher et réserver des destinations, des voyages organisés et des activités
+    - Rechercher et réserver des destinations, des voyages organisés, des activités et des restaurants
     - Fournir des conseils personnalisés sur les voyages
     - Traiter les demandes de réservation
     - Répondre aux questions sur les services
@@ -104,6 +119,7 @@ serve(async (req) => {
     - search_destinations(query): rechercher des destinations
     - search_packages(query): rechercher des voyages organisés  
     - search_activities(query): rechercher des activités
+    - search_restaurants(query): rechercher des restaurants
     - get_package_details(id): obtenir les détails d'un voyage
 
     IMPORTANT : Quand un utilisateur veut chercher ou réserver quelque chose, tu dois utiliser les fonctions appropriées.
@@ -118,7 +134,8 @@ serve(async (req) => {
                        message.toLowerCase().includes('réserv') ||
                        message.toLowerCase().includes('voyage') ||
                        message.toLowerCase().includes('activité') ||
-                       message.toLowerCase().includes('destination');
+                       message.toLowerCase().includes('destination') ||
+                       message.toLowerCase().includes('restaurant');
 
     let contextInfo = '';
     if (needsSearch) {
@@ -127,56 +144,80 @@ serve(async (req) => {
         .from('destinations')
         .select('id, title, country, price_from')
         .eq('is_published', true)
-        .limit(5);
+        .limit(3);
 
       const { data: samplePackages } = await supabase
         .from('packages')
         .select('id, title, duration_days, price')
         .eq('is_available', true)
-        .limit(5);
+        .limit(3);
+
+      const { data: sampleRestaurants } = await supabase
+        .from('restaurants')
+        .select('id, name, city, cuisine_type')
+        .eq('is_available', true)
+        .limit(3);
 
       contextInfo = `\n\nContexte disponible :
-      Destinations : ${sampleDestinations?.map(d => `${d.title} (${d.country}) - À partir de ${d.price_from}€`).join(', ')}
-      Voyages : ${samplePackages?.map(p => `${p.title} (${p.duration_days} jours) - ${p.price}€`).join(', ')}`;
+      Destinations : ${sampleDestinations?.map(d => `${d.title} (${d.country})`).join(', ')}
+      Voyages : ${samplePackages?.map(p => `${p.title} (${p.duration_days} jours)`).join(', ')}
+      Restaurants : ${sampleRestaurants?.map(r => `${r.name} (${r.cuisine_type}, ${r.city})`).join(', ')}`;
     }
 
-    console.log('Sending request to DeepSeek API...');
+    console.log('Sending request to Hugging Face API with DeepSeek...');
 
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
+    // Use Hugging Face Inference API for DeepSeek
+    const response = await fetch('https://api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${deepseekApiKey}`,
+        'Authorization': `Bearer ${huggingFaceApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: systemPrompt + contextInfo },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 2000,
-        temperature: 0.7,
-        stream: false,
+        inputs: `<|im_start|>system\n${systemPrompt + contextInfo}<|im_end|>\n<|im_start|>user\n${message}<|im_end|>\n<|im_start|>assistant\n`,
+        parameters: {
+          max_new_tokens: 2000,
+          temperature: 0.7,
+          do_sample: true,
+          stop: ["<|im_end|>"]
+        },
+        options: {
+          wait_for_model: true
+        }
       }),
     });
 
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('DeepSeek API Error:', errorData);
-      throw new Error(`DeepSeek API error: ${response.status} ${response.statusText}`);
+      console.error('Hugging Face API Error:', errorData);
+      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('DeepSeek API Response received');
+    console.log('Hugging Face API Response received');
 
-    const aiResponse = data.choices[0].message.content;
+    let aiResponse = '';
+    if (Array.isArray(data) && data[0]?.generated_text) {
+      // Extract the assistant's response from the generated text
+      const fullText = data[0].generated_text;
+      const assistantStart = fullText.lastIndexOf('<|im_start|>assistant\n');
+      if (assistantStart !== -1) {
+        aiResponse = fullText.substring(assistantStart + '<|im_start|>assistant\n'.length).trim();
+      } else {
+        aiResponse = fullText;
+      }
+    } else if (data.generated_text) {
+      aiResponse = data.generated_text;
+    } else {
+      aiResponse = "Je suis désolé, je n'ai pas pu traiter votre demande. Pouvez-vous reformuler ?";
+    }
 
     return new Response(
       JSON.stringify({ 
         response: aiResponse,
         type: 'conversation',
         suggestedActions: needsSearch ? ['search', 'book'] : [],
-        usage: data.usage 
+        usage: data.usage || {} 
       }), 
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
