@@ -1,0 +1,300 @@
+import React, { createContext, useContext, useState, useEffect } from 'react';
+
+export type Language = 'fr' | 'en' | 'es' | 'it' | 'pt' | 'ru' | 'ja' | 'zh';
+
+interface LanguageContextType {
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  t: (key: string) => string;
+}
+
+const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
+
+export const useLanguage = () => {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+};
+
+const translations = {
+  fr: {
+    'nav.destinations': 'Destinations',
+    'nav.packages': 'Packages',
+    'nav.activities': 'Activités',
+    'hero.title': 'Découvrez le monde avec notre IA de voyage',
+    'hero.subtitle': 'Planifiez des voyages personnalisés grâce à notre assistant intelligent qui comprend vos préférences et votre budget.',
+    'hero.cta': 'Commencer votre aventure',
+    'features.ai.title': 'Assistant IA Intelligent',
+    'features.ai.description': 'Notre IA analyse vos préférences pour créer des itinéraires parfaitement adaptés.',
+    'features.personalized.title': 'Voyages Personnalisés',
+    'features.personalized.description': 'Chaque voyage est unique, conçu selon vos goûts et votre budget.',
+    'features.support.title': 'Support 24/7',
+    'features.support.description': 'Une équipe dédiée vous accompagne avant, pendant et après votre voyage.',
+    'categories.title': 'Explorez par Catégorie',
+    'categories.adventure': 'Aventure',
+    'categories.beach': 'Plage',
+    'categories.culture': 'Culture',
+    'categories.eco': 'Écologie',
+    'categories.family': 'Famille',
+    'categories.luxury': 'Luxe',
+    'destinations.title': 'Destinations Populaires',
+    'cookies.banner.message': 'Nous utilisons des cookies pour améliorer votre expérience. En continuant, vous acceptez notre utilisation des cookies.',
+    'cookies.banner.accept': 'Accepter',
+    'cookies.banner.decline': 'Refuser',
+    'cookies.banner.manage': 'Gérer les préférences',
+    'footer.cgu': 'Conditions Générales d\'Utilisation',
+    'footer.cgv': 'Conditions Générales de Vente',
+    'footer.legal': 'Mentions Légales',
+    'footer.cookies': 'Politique de Cookies',
+    'footer.copyright': '© 2025 Attractive Trip. Tous droits réservés.'
+  },
+  en: {
+    'nav.destinations': 'Destinations',
+    'nav.packages': 'Packages',
+    'nav.activities': 'Activities',
+    'hero.title': 'Discover the world with our travel AI',
+    'hero.subtitle': 'Plan personalized trips with our intelligent assistant that understands your preferences and budget.',
+    'hero.cta': 'Start your adventure',
+    'features.ai.title': 'Intelligent AI Assistant',
+    'features.ai.description': 'Our AI analyzes your preferences to create perfectly tailored itineraries.',
+    'features.personalized.title': 'Personalized Travel',
+    'features.personalized.description': 'Every trip is unique, designed according to your tastes and budget.',
+    'features.support.title': '24/7 Support',
+    'features.support.description': 'A dedicated team accompanies you before, during and after your trip.',
+    'categories.title': 'Explore by Category',
+    'categories.adventure': 'Adventure',
+    'categories.beach': 'Beach',
+    'categories.culture': 'Culture',
+    'categories.eco': 'Ecology',
+    'categories.family': 'Family',
+    'categories.luxury': 'Luxury',
+    'destinations.title': 'Popular Destinations',
+    'cookies.banner.message': 'We use cookies to improve your experience. By continuing, you accept our use of cookies.',
+    'cookies.banner.accept': 'Accept',
+    'cookies.banner.decline': 'Decline',
+    'cookies.banner.manage': 'Manage preferences',
+    'footer.cgu': 'Terms of Use',
+    'footer.cgv': 'Terms of Sale',
+    'footer.legal': 'Legal Notice',
+    'footer.cookies': 'Cookie Policy',
+    'footer.copyright': '© 2025 Attractive Trip. All rights reserved.'
+  },
+  es: {
+    'nav.destinations': 'Destinos',
+    'nav.packages': 'Paquetes',
+    'nav.activities': 'Actividades',
+    'hero.title': 'Descubre el mundo con nuestra IA de viajes',
+    'hero.subtitle': 'Planifica viajes personalizados con nuestro asistente inteligente que entiende tus preferencias y presupuesto.',
+    'hero.cta': 'Comienza tu aventura',
+    'features.ai.title': 'Asistente IA Inteligente',
+    'features.ai.description': 'Nuestra IA analiza tus preferencias para crear itinerarios perfectamente adaptados.',
+    'features.personalized.title': 'Viajes Personalizados',
+    'features.personalized.description': 'Cada viaje es único, diseñado según tus gustos y presupuesto.',
+    'features.support.title': 'Soporte 24/7',
+    'features.support.description': 'Un equipo dedicado te acompaña antes, durante y después de tu viaje.',
+    'categories.title': 'Explora por Categoría',
+    'categories.adventure': 'Aventura',
+    'categories.beach': 'Playa',
+    'categories.culture': 'Cultura',
+    'categories.eco': 'Ecología',
+    'categories.family': 'Familia',
+    'categories.luxury': 'Lujo',
+    'destinations.title': 'Destinos Populares',
+    'cookies.banner.message': 'Utilizamos cookies para mejorar tu experiencia. Al continuar, aceptas nuestro uso de cookies.',
+    'cookies.banner.accept': 'Aceptar',
+    'cookies.banner.decline': 'Rechazar',
+    'cookies.banner.manage': 'Gestionar preferencias',
+    'footer.cgu': 'Términos de Uso',
+    'footer.cgv': 'Términos de Venta',
+    'footer.legal': 'Aviso Legal',
+    'footer.cookies': 'Política de Cookies',
+    'footer.copyright': '© 2025 Attractive Trip. Todos los derechos reservados.'
+  },
+  it: {
+    'nav.destinations': 'Destinazioni',
+    'nav.packages': 'Pacchetti',
+    'nav.activities': 'Attività',
+    'hero.title': 'Scopri il mondo con la nostra IA di viaggio',
+    'hero.subtitle': 'Pianifica viaggi personalizzati con il nostro assistente intelligente che comprende le tue preferenze e il tuo budget.',
+    'hero.cta': 'Inizia la tua avventura',
+    'features.ai.title': 'Assistente IA Intelligente',
+    'features.ai.description': 'La nostra IA analizza le tue preferenze per creare itinerari perfettamente su misura.',
+    'features.personalized.title': 'Viaggi Personalizzati',
+    'features.personalized.description': 'Ogni viaggio è unico, progettato secondo i tuoi gusti e il tuo budget.',
+    'features.support.title': 'Supporto 24/7',
+    'features.support.description': 'Un team dedicato ti accompagna prima, durante e dopo il tuo viaggio.',
+    'categories.title': 'Esplora per Categoria',
+    'categories.adventure': 'Avventura',
+    'categories.beach': 'Spiaggia',
+    'categories.culture': 'Cultura',
+    'categories.eco': 'Ecologia',
+    'categories.family': 'Famiglia',
+    'categories.luxury': 'Lusso',
+    'destinations.title': 'Destinazioni Popolari',
+    'cookies.banner.message': 'Utilizziamo i cookies per migliorare la tua esperienza. Continuando, accetti il nostro uso dei cookies.',
+    'cookies.banner.accept': 'Accetta',
+    'cookies.banner.decline': 'Rifiuta',
+    'cookies.banner.manage': 'Gestisci preferenze',
+    'footer.cgu': 'Termini di Utilizzo',
+    'footer.cgv': 'Termini di Vendita',
+    'footer.legal': 'Note Legali',
+    'footer.cookies': 'Politica dei Cookies',
+    'footer.copyright': '© 2025 Attractive Trip. Tutti i diritti riservati.'
+  },
+  pt: {
+    'nav.destinations': 'Destinos',
+    'nav.packages': 'Pacotes',
+    'nav.activities': 'Atividades',
+    'hero.title': 'Descubra o mundo com nossa IA de viagem',
+    'hero.subtitle': 'Planeje viagens personalizadas com nosso assistente inteligente que entende suas preferências e orçamento.',
+    'hero.cta': 'Comece sua aventura',
+    'features.ai.title': 'Assistente IA Inteligente',
+    'features.ai.description': 'Nossa IA analisa suas preferências para criar roteiros perfeitamente adaptados.',
+    'features.personalized.title': 'Viagens Personalizadas',
+    'features.personalized.description': 'Cada viagem é única, projetada de acordo com seus gostos e orçamento.',
+    'features.support.title': 'Suporte 24/7',
+    'features.support.description': 'Uma equipe dedicada acompanha você antes, durante e após sua viagem.',
+    'categories.title': 'Explore por Categoria',
+    'categories.adventure': 'Aventura',
+    'categories.beach': 'Praia',
+    'categories.culture': 'Cultura',
+    'categories.eco': 'Ecologia',
+    'categories.family': 'Família',
+    'categories.luxury': 'Luxo',
+    'destinations.title': 'Destinos Populares',
+    'cookies.banner.message': 'Usamos cookies para melhorar sua experiência. Ao continuar, você aceita nosso uso de cookies.',
+    'cookies.banner.accept': 'Aceitar',
+    'cookies.banner.decline': 'Recusar',
+    'cookies.banner.manage': 'Gerenciar preferências',
+    'footer.cgu': 'Termos de Uso',
+    'footer.cgv': 'Termos de Venda',
+    'footer.legal': 'Aviso Legal',
+    'footer.cookies': 'Política de Cookies',
+    'footer.copyright': '© 2025 Attractive Trip. Todos os direitos reservados.'
+  },
+  ru: {
+    'nav.destinations': 'Направления',
+    'nav.packages': 'Пакеты',
+    'nav.activities': 'Активности',
+    'hero.title': 'Откройте мир с нашим ИИ для путешествий',
+    'hero.subtitle': 'Планируйте персонализированные поездки с нашим интеллектуальным помощником, который понимает ваши предпочтения и бюджет.',
+    'hero.cta': 'Начните свое приключение',
+    'features.ai.title': 'Интеллектуальный ИИ-помощник',
+    'features.ai.description': 'Наш ИИ анализирует ваши предпочтения для создания идеально подобранных маршрутов.',
+    'features.personalized.title': 'Персонализированные путешествия',
+    'features.personalized.description': 'Каждое путешествие уникально, разработано в соответствии с вашими вкусами и бюджетом.',
+    'features.support.title': 'Поддержка 24/7',
+    'features.support.description': 'Специальная команда сопровождает вас до, во время и после поездки.',
+    'categories.title': 'Исследуйте по категориям',
+    'categories.adventure': 'Приключения',
+    'categories.beach': 'Пляж',
+    'categories.culture': 'Культура',
+    'categories.eco': 'Экология',
+    'categories.family': 'Семья',
+    'categories.luxury': 'Люкс',
+    'destinations.title': 'Популярные направления',
+    'cookies.banner.message': 'Мы используем файлы cookie для улучшения вашего опыта. Продолжая, вы соглашаетесь с нашим использованием файлов cookie.',
+    'cookies.banner.accept': 'Принять',
+    'cookies.banner.decline': 'Отклонить',
+    'cookies.banner.manage': 'Управлять настройками',
+    'footer.cgu': 'Условия использования',
+    'footer.cgv': 'Условия продажи',
+    'footer.legal': 'Правовое уведомление',
+    'footer.cookies': 'Политика файлов cookie',
+    'footer.copyright': '© 2025 Attractive Trip. Все права защищены.'
+  },
+  ja: {
+    'nav.destinations': '目的地',
+    'nav.packages': 'パッケージ',
+    'nav.activities': 'アクティビティ',
+    'hero.title': '旅行AIで世界を発見しましょう',
+    'hero.subtitle': 'あなたの好みと予算を理解するインテリジェントアシスタントでパーソナライズされた旅行を計画しましょう。',
+    'hero.cta': '冒険を始める',
+    'features.ai.title': 'インテリジェントAIアシスタント',
+    'features.ai.description': '私たちのAIはあなたの好みを分析して、完璧に調整された旅程を作成します。',
+    'features.personalized.title': 'パーソナライズされた旅行',
+    'features.personalized.description': '各旅行はユニークで、あなたの好みと予算に合わせて設計されています。',
+    'features.support.title': '24時間サポート',
+    'features.support.description': '専任チームが旅行前、旅行中、旅行後もサポートします。',
+    'categories.title': 'カテゴリーで探索',
+    'categories.adventure': 'アドベンチャー',
+    'categories.beach': 'ビーチ',
+    'categories.culture': '文化',
+    'categories.eco': 'エコロジー',
+    'categories.family': 'ファミリー',
+    'categories.luxury': 'ラグジュアリー',
+    'destinations.title': '人気の目的地',
+    'cookies.banner.message': 'より良い体験のためにクッキーを使用しています。続行することで、クッキーの使用に同意したものとみなします。',
+    'cookies.banner.accept': '同意する',
+    'cookies.banner.decline': '拒否する',
+    'cookies.banner.manage': '設定を管理',
+    'footer.cgu': '利用規約',
+    'footer.cgv': '販売条件',
+    'footer.legal': '法的告知',
+    'footer.cookies': 'クッキーポリシー',
+    'footer.copyright': '© 2025 Attractive Trip. 全著作権所有。'
+  },
+  zh: {
+    'nav.destinations': '目的地',
+    'nav.packages': '套餐',
+    'nav.activities': '活动',
+    'hero.title': '用我们的旅行AI发现世界',
+    'hero.subtitle': '使用我们理解您的偏好和预算的智能助手规划个性化旅行。',
+    'hero.cta': '开始您的冒险',
+    'features.ai.title': '智能AI助手',
+    'features.ai.description': '我们的AI分析您的偏好，创建完美定制的行程。',
+    'features.personalized.title': '个性化旅行',
+    'features.personalized.description': '每次旅行都是独特的，根据您的品味和预算设计。',
+    'features.support.title': '24/7支持',
+    'features.support.description': '专门的团队在您旅行前、旅行中和旅行后为您提供支持。',
+    'categories.title': '按类别探索',
+    'categories.adventure': '冒险',
+    'categories.beach': '海滩',
+    'categories.culture': '文化',
+    'categories.eco': '生态',
+    'categories.family': '家庭',
+    'categories.luxury': '豪华',
+    'destinations.title': '热门目的地',
+    'cookies.banner.message': '我们使用cookies来改善您的体验。继续使用即表示您接受我们对cookies的使用。',
+    'cookies.banner.accept': '接受',
+    'cookies.banner.decline': '拒绝',
+    'cookies.banner.manage': '管理偏好',
+    'footer.cgu': '使用条款',
+    'footer.cgv': '销售条款',
+    'footer.legal': '法律声明',
+    'footer.cookies': 'Cookie政策',
+    'footer.copyright': '© 2025 Attractive Trip. 版权所有。'
+  }
+};
+
+interface LanguageProviderProps {
+  children: React.ReactNode;
+}
+
+export const LanguageProvider: React.FC<LanguageProviderProps> = ({ children }) => {
+  const [language, setLanguage] = useState<Language>('fr');
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('language') as Language;
+    if (savedLanguage && translations[savedLanguage]) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  const handleSetLanguage = (lang: Language) => {
+    setLanguage(lang);
+    localStorage.setItem('language', lang);
+  };
+
+  const t = (key: string): string => {
+    return translations[language][key as keyof typeof translations[typeof language]] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, setLanguage: handleSetLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+};

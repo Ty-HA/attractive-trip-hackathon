@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Search, Plane, MapPin, Star, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "@/contexts/LanguageContext";
 import heroImage from "@/assets/hero-beach.jpg";
 import categoryLuxury from "@/assets/category-luxury.jpg";
 import categoryAdventure from "@/assets/category-adventure.jpg";
@@ -15,6 +16,8 @@ import destinationBali from "@/assets/destination-bali.jpg";
 import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Index = () => {
+  const { t } = useLanguage();
+  
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation */}
@@ -28,9 +31,9 @@ const Index = () => {
               </h1>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">Destinations</Link>
-              <Link to="/packages" className="text-foreground hover:text-primary transition-colors">Voyages</Link>
-              <Link to="/activities" className="text-foreground hover:text-primary transition-colors">Activités</Link>
+              <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">{t('nav.destinations')}</Link>
+              <Link to="/packages" className="text-foreground hover:text-primary transition-colors">{t('nav.packages')}</Link>
+              <Link to="/activities" className="text-foreground hover:text-primary transition-colors">{t('nav.activities')}</Link>
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>
             </div>
@@ -48,11 +51,10 @@ const Index = () => {
         
         <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">
           <h2 className="text-5xl md:text-6xl font-display font-bold mb-6">
-            Votre voyage de rêve, 
-            <span className="text-secondary"> conçu par l'IA</span>
+            {t('hero.title')}
           </h2>
           <p className="text-xl md:text-2xl mb-8 text-primary-light">
-            Découvrez des destinations uniques avec notre assistant voyage intelligent
+            {t('hero.subtitle')}
           </p>
           
           {/* Search Bar */}
@@ -66,7 +68,7 @@ const Index = () => {
               </div>
               <Button size="lg" className="h-12 px-8 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary">
                 <Search className="h-5 w-5 mr-2" />
-                Rechercher
+                {t('hero.cta')}
               </Button>
             </div>
           </div>
@@ -90,19 +92,19 @@ const Index = () => {
         <div className="container mx-auto">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-display font-bold text-foreground mb-4">
-              Explorez par thème
+              {t('categories.title')}
             </h3>
             <p className="text-xl text-muted-foreground">Des voyages pensés pour chaque envie</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: "Luxe & Prestige", image: categoryLuxury, description: "Expériences exclusives et raffinées" },
-              { title: "Aventure & Nature", image: categoryAdventure, description: "Explorez les merveilles naturelles" },
-              { title: "Plages & Détente", image: categoryBeach, description: "Évasion tropicale et bien-être" },
-              { title: "Culture & Histoire", image: categoryCulture, description: "Immersion dans l'art et l'histoire" },
-              { title: "Famille & Enfants", image: categoryFamily, description: "Aventures pour toute la famille" },
-              { title: "Éco-responsable", image: categoryEco, description: "Voyagez en préservant la planète" }
+              { title: t('categories.luxury'), image: categoryLuxury, description: "Expériences exclusives et raffinées" },
+              { title: t('categories.adventure'), image: categoryAdventure, description: "Explorez les merveilles naturelles" },
+              { title: t('categories.beach'), image: categoryBeach, description: "Évasion tropicale et bien-être" },
+              { title: t('categories.culture'), image: categoryCulture, description: "Immersion dans l'art et l'histoire" },
+              { title: t('categories.family'), image: categoryFamily, description: "Aventures pour toute la famille" },
+              { title: t('categories.eco'), image: categoryEco, description: "Voyagez en préservant la planète" }
             ].map((category, index) => (
               <Card key={index} className="group hover:shadow-glow transition-all duration-300 cursor-pointer overflow-hidden">
                 <div 
@@ -126,7 +128,7 @@ const Index = () => {
         <div className="container mx-auto px-6">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-display font-bold text-foreground mb-4">
-              Destinations tendance
+              {t('destinations.title')}
             </h3>
             <p className="text-xl text-muted-foreground">Les coups de cœur de nos voyageurs</p>
           </div>
