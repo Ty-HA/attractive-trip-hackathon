@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Plane, MapPin, Star, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 import heroImage from "@/assets/hero-beach.jpg";
 import categoryLuxury from "@/assets/category-luxury.jpg";
 import categoryAdventure from "@/assets/category-adventure.jpg";
@@ -34,6 +35,7 @@ const Index = () => {
               <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">{t('nav.destinations')}</Link>
               <Link to="/packages" className="text-foreground hover:text-primary transition-colors">{t('nav.packages')}</Link>
               <Link to="/activities" className="text-foreground hover:text-primary transition-colors">{t('nav.activities')}</Link>
+              <LanguageSelector />
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>
             </div>

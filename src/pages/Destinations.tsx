@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, MapPin, Star, Calendar, Filter, Plane, ArrowLeft } from "lucide-react";
+import { Search, MapPin, Star, Calendar, Filter, ArrowLeft, Plane } from "lucide-react";
 import { Link } from "react-router-dom";
+import Header from "@/components/Header";
 import destinationSantorini from "@/assets/destination-santorini.jpg";
 import destinationBali from "@/assets/destination-bali.jpg";
 import destinationKyoto from "@/assets/destination-kyoto.jpg";
@@ -135,31 +136,7 @@ const Destinations = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-                <ArrowLeft className="h-5 w-5 text-primary" />
-                <Plane className="h-8 w-8 text-primary" />
-                <h1 className="text-2xl font-display font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  Attractive Trip
-                </h1>
-              </Link>
-            </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/" className="text-foreground hover:text-primary transition-colors">Accueil</Link>
-              <a href="#" className="text-primary font-semibold">Destinations</a>
-              <Link to="/packages" className="text-foreground hover:text-primary transition-colors">Voyages</Link>
-              <Link to="/activities" className="text-foreground hover:text-primary transition-colors">Activités</Link>
-              <Button variant="outline">Connexion</Button>
-              <Button>S'inscrire</Button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+      <Header />
       <div className="container mx-auto px-6 py-12">
         {/* Header */}
         <div className="text-center mb-12">
