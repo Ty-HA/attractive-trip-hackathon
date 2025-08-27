@@ -260,17 +260,42 @@ const Activities = () => {
   ];
 
   const filteredActivities = activities.filter(activity => {
-    const matchesSearch = activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         activity.location.toLowerCase().includes(searchTerm.toLowerCase());
+    // Search filter
+    const matchesSearch = searchTerm === "" || 
+      activity.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      activity.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      activity.description.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Category filter
     const matchesCategory = selectedCategory === "all" || activity.category === selectedCategory;
+    
+    // Duration filter
     const matchesDuration = selectedDuration === "all" || activity.duration === selectedDuration;
+    
+    // Difficulty filter
     const matchesDifficulty = selectedDifficulty === "all" || activity.difficulty === selectedDifficulty;
+    
+    // Price filter
     const matchesPrice = activity.price >= priceRange[0] && activity.price <= priceRange[1];
+    
+    // Age filter
     const matchesAge = activity.minAge >= ageRange[0] && activity.minAge <= ageRange[1];
     
-    let matchesLocation = true;
+    // Location filter
+    let matchesLocation = selectedLocation === "all";
     if (selectedLocation !== "all") {
-      matchesLocation = activity.location.toLowerCase().includes(selectedLocation);
+      const locationMap: { [key: string]: string[] } = {
+        "greece": ["grèce", "greece", "santorin", "mykonos"],
+        "indonesia": ["indonésie", "indonesia", "bali", "ubud"],
+        "japan": ["japon", "japan", "kyoto", "tokyo"],
+        "tanzania": ["tanzanie", "tanzania", "serengeti"],
+        "spain": ["espagne", "spain", "madrid", "barcelona"]
+      };
+      
+      const searchTerms = locationMap[selectedLocation] || [selectedLocation];
+      matchesLocation = searchTerms.some(term => 
+        activity.location.toLowerCase().includes(term.toLowerCase())
+      );
     }
     
     return matchesSearch && matchesCategory && matchesDuration && matchesDifficulty && matchesPrice && matchesAge && matchesLocation;
