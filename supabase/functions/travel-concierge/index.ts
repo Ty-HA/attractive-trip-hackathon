@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,7 +14,13 @@ serve(async (req) => {
   }
 
   try {
-    const { message, type = 'general', context = {} } = await req.json();
+    const { message, type = 'general', context = {}, action } = await req.json();
+
+    // Initialize Supabase client for data access
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     
@@ -21,44 +28,116 @@ serve(async (req) => {
       throw new Error('DeepSeek API key not configured');
     }
 
-    // Créer le prompt système basé sur le type de requête
-    let systemPrompt = '';
-    
-    switch (type) {
-      case 'itinerary':
-        systemPrompt = `Tu es un expert en voyages spécialisé dans la création d'itinéraires personnalisés. 
-        Réponds toujours en français. Crée des itinéraires détaillés avec des recommandations de lieux, 
-        d'activités, de restaurants et de logements. Tiens compte du budget, de la durée et des préférences 
-        du voyageur.`;
-        break;
-      case 'destination':
-        systemPrompt = `Tu es un guide de voyage expert qui connaît parfaitement les destinations du monde entier. 
-        Réponds toujours en français. Fournis des informations détaillées sur les attractions, la culture locale, 
-        la météo, les conseils pratiques et les expériences uniques à vivre.`;
-        break;
-      case 'booking':
-        systemPrompt = `Tu es un assistant de réservation de voyage. Réponds toujours en français.
-        Aide les utilisateurs à comprendre les options de réservation, les politiques d'annulation, 
-        les meilleures périodes pour réserver et les astuces pour économiser.`;
-        break;
-      default:
-        systemPrompt = `Tu es un concierge de voyage expert et bienveillant. Réponds toujours en français. 
-        Tu aides les voyageurs avec tous leurs besoins : planification, recommandations, conseils pratiques, 
-        informations sur les destinations, et résolution de problèmes de voyage.`;
+    // Handle specific actions (bookings, searches, etc.)
+    if (action) {
+      switch (action.type) {
+        case 'search_destinations':
+          const { data: destinations } = await supabase
+            .from('destinations')
+            .select('*')
+            .eq('is_published', true)
+            .ilike('title', `%${action.query || ''}%`);
+          
+          return new Response(JSON.stringify({ 
+            type: 'search_results',
+            results: destinations,
+            message: `J'ai trouvé ${destinations?.length || 0} destinations correspondant à votre recherche.`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
+        case 'search_packages':
+          const { data: packages } = await supabase
+            .from('packages')
+            .select('*')
+            .eq('is_available', true)
+            .ilike('title', `%${action.query || ''}%`);
+          
+          return new Response(JSON.stringify({ 
+            type: 'search_results',
+            results: packages,
+            message: `J'ai trouvé ${packages?.length || 0} voyages organisés disponibles.`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
+        case 'search_activities':
+          const { data: activities } = await supabase
+            .from('activities')
+            .select('*')
+            .eq('is_available', true)
+            .ilike('title', `%${action.query || ''}%`);
+          
+          return new Response(JSON.stringify({ 
+            type: 'search_results',
+            results: activities,
+            message: `J'ai trouvé ${activities?.length || 0} activités disponibles.`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+
+        case 'get_package_details':
+          const { data: packageDetails } = await supabase
+            .from('packages')
+            .select('*')
+            .eq('id', action.id)
+            .single();
+          
+          return new Response(JSON.stringify({ 
+            type: 'package_details',
+            package: packageDetails,
+            message: `Voici les détails du voyage "${packageDetails?.title}".`
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+      }
     }
 
-    // Ajouter le contexte si fourni
-    if (context.destination) {
-      systemPrompt += ` Le voyageur s'intéresse à la destination: ${context.destination}.`;
-    }
-    if (context.budget) {
-      systemPrompt += ` Budget approximatif: ${context.budget}.`;
-    }
-    if (context.duration) {
-      systemPrompt += ` Durée du voyage: ${context.duration}.`;
-    }
-    if (context.travelers) {
-      systemPrompt += ` Nombre de voyageurs: ${context.travelers}.`;
+    // Create enhanced system prompt with booking capabilities
+    let systemPrompt = `Tu es un assistant de voyage conversationnel intelligent qui peut aider les utilisateurs à :
+    - Rechercher et réserver des destinations, des voyages organisés et des activités
+    - Fournir des conseils personnalisés sur les voyages
+    - Traiter les demandes de réservation
+    - Répondre aux questions sur les services
+
+    Tu as accès aux fonctions suivantes :
+    - search_destinations(query): rechercher des destinations
+    - search_packages(query): rechercher des voyages organisés  
+    - search_activities(query): rechercher des activités
+    - get_package_details(id): obtenir les détails d'un voyage
+
+    IMPORTANT : Quand un utilisateur veut chercher ou réserver quelque chose, tu dois utiliser les fonctions appropriées.
+    
+    Réponds toujours en français de manière naturelle et conversationnelle.
+    Si l'utilisateur veut réserver, guide-le étape par étape.`;
+
+    // Analyze the message to determine if we need to call functions
+    const needsSearch = message.toLowerCase().includes('cherch') || 
+                       message.toLowerCase().includes('trouv') || 
+                       message.toLowerCase().includes('voir') ||
+                       message.toLowerCase().includes('réserv') ||
+                       message.toLowerCase().includes('voyage') ||
+                       message.toLowerCase().includes('activité') ||
+                       message.toLowerCase().includes('destination');
+
+    let contextInfo = '';
+    if (needsSearch) {
+      // Get some sample data to provide context
+      const { data: sampleDestinations } = await supabase
+        .from('destinations')
+        .select('id, title, country, price_from')
+        .eq('is_published', true)
+        .limit(5);
+
+      const { data: samplePackages } = await supabase
+        .from('packages')
+        .select('id, title, duration_days, price')
+        .eq('is_available', true)
+        .limit(5);
+
+      contextInfo = `\n\nContexte disponible :
+      Destinations : ${sampleDestinations?.map(d => `${d.title} (${d.country}) - À partir de ${d.price_from}€`).join(', ')}
+      Voyages : ${samplePackages?.map(p => `${p.title} (${p.duration_days} jours) - ${p.price}€`).join(', ')}`;
     }
 
     console.log('Sending request to DeepSeek API...');
@@ -72,7 +151,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'deepseek-chat',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: systemPrompt + contextInfo },
           { role: 'user', content: message }
         ],
         max_tokens: 2000,
@@ -95,7 +174,8 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         response: aiResponse,
-        type: type,
+        type: 'conversation',
+        suggestedActions: needsSearch ? ['search', 'book'] : [],
         usage: data.usage 
       }), 
       {

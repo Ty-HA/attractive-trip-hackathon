@@ -75,19 +75,7 @@ const Index = () => {
             </div>
           </div>
 
-          {/* AI Chat Trigger */}
-          <div className="mt-8">
-            <Link to="/concierge">
-              <Button 
-                variant="secondary" 
-                size="lg"
-                className="bg-secondary/90 hover:bg-secondary text-secondary-foreground shadow-luxury"
-              >
-                <MessageCircle className="h-5 w-5 mr-2" />
-                {t('hero.ai.button')}
-              </Button>
-            </Link>
-          </div>
+          {/* AI Chat Interface - Now handled by ConversationalAI component */}
         </div>
       </section>
 
