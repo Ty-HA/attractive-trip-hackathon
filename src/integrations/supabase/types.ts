@@ -14,16 +14,350 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          available_times: string[] | null
+          booking_conditions: string | null
+          cancellation_policy: string | null
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          destination_id: string | null
+          difficulty: string | null
+          duration_hours: number | null
+          duration_type: string | null
+          equipment_provided: string[] | null
+          highlights: string[] | null
+          id: string
+          included_services: string[] | null
+          is_available: boolean | null
+          is_featured: boolean | null
+          max_group_size: number | null
+          meeting_point: string | null
+          min_age: number | null
+          price: number
+          provider_contact: string | null
+          provider_name: string | null
+          slug: string
+          title: string
+          updated_at: string
+          what_to_bring: string[] | null
+        }
+        Insert: {
+          available_times?: string[] | null
+          booking_conditions?: string | null
+          cancellation_policy?: string | null
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_id?: string | null
+          difficulty?: string | null
+          duration_hours?: number | null
+          duration_type?: string | null
+          equipment_provided?: string[] | null
+          highlights?: string[] | null
+          id?: string
+          included_services?: string[] | null
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          max_group_size?: number | null
+          meeting_point?: string | null
+          min_age?: number | null
+          price: number
+          provider_contact?: string | null
+          provider_name?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+          what_to_bring?: string[] | null
+        }
+        Update: {
+          available_times?: string[] | null
+          booking_conditions?: string | null
+          cancellation_policy?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_id?: string | null
+          difficulty?: string | null
+          duration_hours?: number | null
+          duration_type?: string | null
+          equipment_provided?: string[] | null
+          highlights?: string[] | null
+          id?: string
+          included_services?: string[] | null
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          max_group_size?: number | null
+          meeting_point?: string | null
+          min_age?: number | null
+          price?: number
+          provider_contact?: string | null
+          provider_name?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+          what_to_bring?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      destinations: {
+        Row: {
+          best_season: string | null
+          continent: string
+          country: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          difficulty_level: string | null
+          duration_days: number | null
+          excluded_services: string[] | null
+          featured_image_url: string | null
+          gallery_images: string[] | null
+          highlights: string[] | null
+          id: string
+          included_services: string[] | null
+          is_featured: boolean | null
+          is_published: boolean | null
+          itinerary: Json | null
+          location_coordinates: unknown | null
+          long_description: string | null
+          max_group_size: number | null
+          meta_description: string | null
+          meta_title: string | null
+          practical_info: Json | null
+          price_from: number | null
+          slug: string
+          subtitle: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          best_season?: string | null
+          continent: string
+          country: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration_days?: number | null
+          excluded_services?: string[] | null
+          featured_image_url?: string | null
+          gallery_images?: string[] | null
+          highlights?: string[] | null
+          id?: string
+          included_services?: string[] | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          itinerary?: Json | null
+          location_coordinates?: unknown | null
+          long_description?: string | null
+          max_group_size?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          practical_info?: Json | null
+          price_from?: number | null
+          slug: string
+          subtitle?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          best_season?: string | null
+          continent?: string
+          country?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          difficulty_level?: string | null
+          duration_days?: number | null
+          excluded_services?: string[] | null
+          featured_image_url?: string | null
+          gallery_images?: string[] | null
+          highlights?: string[] | null
+          id?: string
+          included_services?: string[] | null
+          is_featured?: boolean | null
+          is_published?: boolean | null
+          itinerary?: Json | null
+          location_coordinates?: unknown | null
+          long_description?: string | null
+          max_group_size?: number | null
+          meta_description?: string | null
+          meta_title?: string | null
+          practical_info?: Json | null
+          price_from?: number | null
+          slug?: string
+          subtitle?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      packages: {
+        Row: {
+          available_dates: string[] | null
+          booking_conditions: string | null
+          cancellation_policy: string | null
+          category: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          destination_id: string | null
+          detailed_itinerary: Json | null
+          difficulty: string | null
+          duration_days: number
+          group_size_max: number | null
+          group_size_min: number | null
+          highlights: string[] | null
+          id: string
+          included_services: string[] | null
+          is_available: boolean | null
+          is_featured: boolean | null
+          original_price: number | null
+          price: number
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          available_dates?: string[] | null
+          booking_conditions?: string | null
+          cancellation_policy?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_id?: string | null
+          detailed_itinerary?: Json | null
+          difficulty?: string | null
+          duration_days: number
+          group_size_max?: number | null
+          group_size_min?: number | null
+          highlights?: string[] | null
+          id?: string
+          included_services?: string[] | null
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          original_price?: number | null
+          price: number
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          available_dates?: string[] | null
+          booking_conditions?: string | null
+          cancellation_policy?: string | null
+          category?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          destination_id?: string | null
+          detailed_itinerary?: Json | null
+          difficulty?: string | null
+          duration_days?: number
+          group_size_max?: number | null
+          group_size_min?: number | null
+          highlights?: string[] | null
+          id?: string
+          included_services?: string[] | null
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          original_price?: number | null
+          price?: number
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_admin: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +484,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
