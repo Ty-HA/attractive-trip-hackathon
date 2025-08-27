@@ -8,11 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, Star, Calendar, Filter, ArrowLeft, Plane } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
+import { useLanguage } from "@/contexts/LanguageContext";
 import destinationSantorini from "@/assets/destination-santorini.jpg";
 import destinationBali from "@/assets/destination-bali.jpg";
 import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Destinations = () => {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContinent, setSelectedContinent] = useState("all");
   const [selectedSeason, setSelectedSeason] = useState("all");
@@ -20,105 +22,105 @@ const Destinations = () => {
   const destinations = [
     {
       id: 1,
-      name: "Santorini",
+      name: t('destinations.santorini.name'),
       slug: "santorini-grece",
-      country: "Grèce",
+      country: t('countries.greece'),
       continent: "europe",
-      price: "À partir de 899€",
+      price: `${t('common.from')} 899${t('common.currency')}`,
       rating: 4.9,
-      duration: "7 jours",
+      duration: `7 ${t('common.days')}`,
       bestSeason: "spring",
       image: destinationSantorini,
-      description: "Îles grecques aux couchers de soleil légendaires",
+      description: t('destinations.santorini.description'),
       highlights: ["Architecture cyclades", "Vins locaux", "Plages volcaniques"]
     },
     {
       id: 2,
-      name: "Bali",
+      name: t('destinations.bali.name'),
       slug: "bali-indonesie",
-      country: "Indonésie",
+      country: t('countries.indonesia'),
       continent: "asia",
-      price: "À partir de 1299€",
+      price: `${t('common.from')} 1299${t('common.currency')}`,
       rating: 4.8,
-      duration: "10 jours",
+      duration: `10 ${t('common.days')}`,
       bestSeason: "summer",
       image: destinationBali,
-      description: "Temples ancestraux et plages paradisiaques",
+      description: t('destinations.bali.description'),
       highlights: ["Temples hindous", "Rizières en terrasse", "Yoga & wellness"]
     },
     {
       id: 3,
-      name: "Kyoto",
+      name: t('destinations.kyoto.name'),
       slug: "kyoto-japon",
-      country: "Japon",
+      country: t('countries.japan'),
       continent: "asia",
-      price: "À partir de 1599€",
+      price: `${t('common.from')} 1599${t('common.currency')}`,
       rating: 4.9,
-      duration: "8 jours",
+      duration: `8 ${t('common.days')}`,
       bestSeason: "autumn",
       image: destinationKyoto,
-      description: "Traditions millénaires et jardins zen",
+      description: t('destinations.kyoto.description'),
       highlights: ["Temples bouddhistes", "Geishas", "Jardins japonais"]
     },
     {
       id: 4,
-      name: "Marrakech",
+      name: t('destinations.marrakech.name'),
       slug: "marrakech-maroc",
-      country: "Maroc",
+      country: t('countries.morocco'),
       continent: "africa",
-      price: "À partir de 699€",
+      price: `${t('common.from')} 699${t('common.currency')}`,
       rating: 4.7,
-      duration: "6 jours",
+      duration: `6 ${t('common.days')}`,
       bestSeason: "winter",
-      image: destinationSantorini, // Placeholder - nous pourrions générer une image spécifique
-      description: "Souks colorés et architecture mauresque",
+      image: destinationSantorini,
+      description: t('destinations.marrakech.description'),
       highlights: ["Médina historique", "Palais royaux", "Cuisine épicée"]
     },
     {
       id: 5,
-      name: "New York",
+      name: t('destinations.newyork.name'),
       slug: "new-york-usa",
-      country: "États-Unis",
+      country: t('countries.usa'),
       continent: "america",
-      price: "À partir de 1899€",
+      price: `${t('common.from')} 1899${t('common.currency')}`,
       rating: 4.6,
-      duration: "5 jours",
+      duration: `5 ${t('common.days')}`,
       bestSeason: "autumn",
-      image: destinationBali, // Placeholder
-      description: "La ville qui ne dort jamais",
+      image: destinationBali,
+      description: t('destinations.newyork.description'),
       highlights: ["Times Square", "Central Park", "Broadway"]
     },
     {
       id: 6,
-      name: "Sydney",
+      name: t('destinations.sydney.name'),
       slug: "sydney-australie",
-      country: "Australie",
+      country: t('countries.australia'),
       continent: "oceania",
-      price: "À partir de 2299€",
+      price: `${t('common.from')} 2299${t('common.currency')}`,
       rating: 4.8,
-      duration: "12 jours",
+      duration: `12 ${t('common.days')}`,
       bestSeason: "spring",
-      image: destinationKyoto, // Placeholder
-      description: "Opéra iconique et plages urbaines",
+      image: destinationKyoto,
+      description: t('destinations.sydney.description'),
       highlights: ["Opéra de Sydney", "Harbour Bridge", "Bondi Beach"]
     }
   ];
 
   const continents = [
-    { value: "all", label: "Tous les continents" },
-    { value: "europe", label: "Europe" },
-    { value: "asia", label: "Asie" },
-    { value: "africa", label: "Afrique" },
-    { value: "america", label: "Amérique" },
-    { value: "oceania", label: "Océanie" }
+    { value: "all", label: t('destinations.filter.all.continents') },
+    { value: "europe", label: t('destinations.filter.europe') },
+    { value: "asia", label: t('destinations.filter.asia') },
+    { value: "africa", label: t('destinations.filter.africa') },
+    { value: "america", label: t('destinations.filter.america') },
+    { value: "oceania", label: t('destinations.filter.oceania') }
   ];
 
   const seasons = [
-    { value: "all", label: "Toute l'année" },
-    { value: "spring", label: "Printemps" },
-    { value: "summer", label: "Été" },
-    { value: "autumn", label: "Automne" },
-    { value: "winter", label: "Hiver" }
+    { value: "all", label: t('destinations.filter.all.seasons') },
+    { value: "spring", label: t('destinations.filter.spring') },
+    { value: "summer", label: t('destinations.filter.summer') },
+    { value: "autumn", label: t('destinations.filter.autumn') },
+    { value: "winter", label: t('destinations.filter.winter') }
   ];
 
   const filteredDestinations = destinations.filter(destination => {
@@ -132,10 +134,10 @@ const Destinations = () => {
 
   const getSeasonLabel = (season: string) => {
     const seasonMap: { [key: string]: string } = {
-      spring: "Printemps",
-      summer: "Été", 
-      autumn: "Automne",
-      winter: "Hiver"
+      spring: t('destinations.filter.spring'),
+      summer: t('destinations.filter.summer'),
+      autumn: t('destinations.filter.autumn'),
+      winter: t('destinations.filter.winter')
     };
     return seasonMap[season] || season;
   };
@@ -147,7 +149,7 @@ const Destinations = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-display font-bold text-foreground mb-4">
-            Découvrez nos destinations
+            {t('destinations.title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Explorez le monde avec nos voyages sur mesure, des plages paradisiaques aux métropoles vibrantes
@@ -161,7 +163,7 @@ const Destinations = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher une destination..."
+                  placeholder={t('destinations.search.placeholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 h-12 text-base"
@@ -172,7 +174,7 @@ const Destinations = () => {
             <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
               <Select value={selectedContinent} onValueChange={setSelectedContinent}>
                 <SelectTrigger className="w-full sm:w-48 h-12">
-                  <SelectValue placeholder="Continent" />
+                  <SelectValue placeholder={t('destinations.filter.continent')} />
                 </SelectTrigger>
                 <SelectContent>
                   {continents.map(continent => (
@@ -185,7 +187,7 @@ const Destinations = () => {
 
               <Select value={selectedSeason} onValueChange={setSelectedSeason}>
                 <SelectTrigger className="w-full sm:w-48 h-12">
-                  <SelectValue placeholder="Saison idéale" />
+                  <SelectValue placeholder={t('destinations.filter.season')} />
                 </SelectTrigger>
                 <SelectContent>
                   {seasons.map(season => (
@@ -286,7 +288,7 @@ const Destinations = () => {
                   </div>
                   <Link to={`/destinations/${destination.slug}`}>
                     <Button size="sm" className="bg-gradient-to-r from-primary to-primary-dark">
-                      Découvrir
+                      {t('destinations.discover')}
                     </Button>
                   </Link>
                 </div>
@@ -302,10 +304,10 @@ const Destinations = () => {
               <MapPin className="h-16 w-16 text-muted-foreground mx-auto" />
             </div>
             <h3 className="text-2xl font-display font-bold text-foreground mb-2">
-              Aucune destination trouvée
+              {t('destinations.empty.title')}
             </h3>
             <p className="text-muted-foreground mb-6">
-              Essayez de modifier vos critères de recherche ou filtres
+              {t('destinations.empty.subtitle')}
             </p>
             <Button 
               variant="outline" 
@@ -315,7 +317,7 @@ const Destinations = () => {
                 setSelectedSeason("all");
               }}
             >
-              Réinitialiser les filtres
+              {t('destinations.empty.reset')}
             </Button>
           </div>
         )}

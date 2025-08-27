@@ -8,11 +8,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, MapPin, Star, Calendar, Clock, Users, Filter, ArrowLeft, Heart, Share2, Plane } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
+import { useLanguage } from "@/contexts/LanguageContext";
 import destinationSantorini from "@/assets/destination-santorini.jpg";
 import destinationBali from "@/assets/destination-bali.jpg";
 import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Packages = () => {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedContinent, setSelectedContinent] = useState("all");
   const [selectedCountry, setSelectedCountry] = useState("all");
@@ -302,10 +304,10 @@ const Packages = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-display font-bold text-foreground mb-4">
-            Voyages organisés
+            {t('packages.title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Des itinéraires soigneusement conçus pour vivre des expériences inoubliables en groupe restreint
+            {t('packages.subtitle')}
           </p>
         </div>
 
@@ -317,7 +319,7 @@ const Packages = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher un voyage..."
+                  placeholder={t('packages.search.placeholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 h-12 text-base"
@@ -441,9 +443,9 @@ const Packages = () => {
 
         {/* Results Header */}
         <div className="flex justify-between items-center mb-6">
-          <p className="text-muted-foreground">
-            {filteredPackages.length} voyage{filteredPackages.length > 1 ? 's' : ''} trouvé{filteredPackages.length > 1 ? 's' : ''}
-          </p>
+            <p className="text-muted-foreground">
+              {filteredPackages.length} {filteredPackages.length > 1 ? t('packages.found.plural') : t('packages.found')}
+            </p>
           <Select defaultValue="recommended">
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Trier par" />
@@ -545,10 +547,10 @@ const Packages = () => {
                         <span className="text-sm text-muted-foreground line-through">{pkg.originalPrice}€</span>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground">par personne</p>
+                    <p className="text-xs text-muted-foreground">{t('packages.per.person')}</p>
                   </div>
                   <Button className="bg-gradient-to-r from-primary to-primary-dark">
-                    Voir le voyage
+                    {t('packages.view')}
                   </Button>
                 </div>
               </CardContent>

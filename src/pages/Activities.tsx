@@ -8,11 +8,13 @@ import { Slider } from "@/components/ui/slider";
 import { Search, MapPin, Star, Clock, Users, Filter, ArrowLeft, Heart, Share2, Trophy, Utensils, Mountain, Palette, Waves, Sparkles, Baby, Moon, Plane } from "lucide-react";
 import { Link } from "react-router-dom";
 import Header from "@/components/Header";
+import { useLanguage } from "@/contexts/LanguageContext";
 import destinationSantorini from "@/assets/destination-santorini.jpg";
 import destinationBali from "@/assets/destination-bali.jpg";
 import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Activities = () => {
+  const { t } = useLanguage();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedDuration, setSelectedDuration] = useState("all");
@@ -335,10 +337,10 @@ const Activities = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-display font-bold text-foreground mb-4">
-            Activités & Expériences
+            {t('activities.title')}
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Vivez des moments uniques avec nos activités sélectionnées par des experts locaux
+            {t('activities.subtitle')}
           </p>
         </div>
 
@@ -370,7 +372,7 @@ const Activities = () => {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input
-                  placeholder="Rechercher une activité..."
+                  placeholder={t('activities.search.placeholder')}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10 h-12 text-base"
@@ -587,17 +589,17 @@ const Activities = () => {
                     Max {activity.maxGroup}
                   </div>
                   <div className="text-xs">
-                    {activity.minAge}+ ans
+                    {activity.minAge}+ {t('activities.years')}
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center">
                   <div>
-                    <span className="text-2xl font-bold text-primary">{activity.price}€</span>
-                    <p className="text-xs text-muted-foreground">par personne</p>
+                    <span className="text-2xl font-bold text-primary">{activity.price}{t('common.currency')}</span>
+                    <p className="text-xs text-muted-foreground">{t('activities.per.person')}</p>
                   </div>
                   <Button size="sm" className="bg-gradient-to-r from-primary to-primary-dark">
-                    Réserver
+                    {t('activities.book')}
                   </Button>
                 </div>
 
