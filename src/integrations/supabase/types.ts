@@ -318,6 +318,176 @@ export type Database = {
         }
         Relationships: []
       }
+      restaurant_activities: {
+        Row: {
+          activity_id: string
+          created_at: string
+          distance_km: number | null
+          id: string
+          restaurant_id: string
+        }
+        Insert: {
+          activity_id: string
+          created_at?: string
+          distance_km?: number | null
+          id?: string
+          restaurant_id: string
+        }
+        Update: {
+          activity_id?: string
+          created_at?: string
+          distance_km?: number | null
+          id?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_activities_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_activities_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurant_packages: {
+        Row: {
+          created_at: string
+          id: string
+          included_in_package: boolean | null
+          package_id: string
+          restaurant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          included_in_package?: boolean | null
+          package_id: string
+          restaurant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          included_in_package?: boolean | null
+          package_id?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurant_packages_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "restaurant_packages_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      restaurants: {
+        Row: {
+          address: string | null
+          city: string | null
+          country: string | null
+          created_at: string
+          created_by: string | null
+          cuisine_type: string
+          description: string | null
+          destination_id: string | null
+          email: string | null
+          featured_image_url: string | null
+          id: string
+          images: string[] | null
+          is_available: boolean | null
+          is_featured: boolean | null
+          location_coordinates: unknown | null
+          name: string
+          opening_hours: Json | null
+          phone: string | null
+          price_range: string | null
+          rating: number | null
+          review_count: number | null
+          slug: string
+          specialties: string[] | null
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuisine_type: string
+          description?: string | null
+          destination_id?: string | null
+          email?: string | null
+          featured_image_url?: string | null
+          id?: string
+          images?: string[] | null
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          location_coordinates?: unknown | null
+          name: string
+          opening_hours?: Json | null
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          review_count?: number | null
+          slug: string
+          specialties?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string
+          created_by?: string | null
+          cuisine_type?: string
+          description?: string | null
+          destination_id?: string | null
+          email?: string | null
+          featured_image_url?: string | null
+          id?: string
+          images?: string[] | null
+          is_available?: boolean | null
+          is_featured?: boolean | null
+          location_coordinates?: unknown | null
+          name?: string
+          opening_hours?: Json | null
+          phone?: string | null
+          price_range?: string | null
+          rating?: number | null
+          review_count?: number | null
+          slug?: string
+          specialties?: string[] | null
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_destination_id_fkey"
+            columns: ["destination_id"]
+            isOneToOne: false
+            referencedRelation: "destinations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
