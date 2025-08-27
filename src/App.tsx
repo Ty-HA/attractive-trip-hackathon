@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ConversationalAIProvider } from "@/contexts/ConversationalAIContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Destinations from "./pages/Destinations";
@@ -29,9 +30,10 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <LanguageProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+          <ConversationalAIProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
             <div className="min-h-screen flex flex-col">
               <div className="flex-1">
                 <Routes>
@@ -56,10 +58,11 @@ const App = () => (
               <ConversationalAI />
             </div>
           </BrowserRouter>
-        </LanguageProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+        </ConversationalAIProvider>
+      </LanguageProvider>
+    </AuthProvider>
+  </TooltipProvider>
+</QueryClientProvider>
 );
 
 export default App;

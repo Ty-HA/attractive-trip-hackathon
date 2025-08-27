@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, Send, Loader2, X, Package, MapPin, Calendar, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useConversationalAI } from '@/contexts/ConversationalAIContext';
 
 interface Message {
   id: string;
@@ -26,7 +27,7 @@ interface SearchResult {
 }
 
 const ConversationalAI = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isOpen, openAI, closeAI } = useConversationalAI();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -212,7 +213,7 @@ const ConversationalAI = () => {
   if (!isOpen) {
     return (
       <Button
-        onClick={() => setIsOpen(true)}
+        onClick={openAI}
         className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-luxury bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
         size="lg"
       >
@@ -231,7 +232,7 @@ const ConversationalAI = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setIsOpen(false)}
+          onClick={closeAI}
           className="text-white hover:bg-white/10"
         >
           <X className="h-4 w-4" />

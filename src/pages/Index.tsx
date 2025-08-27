@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Plane, MapPin, Star, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useConversationalAI } from "@/contexts/ConversationalAIContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import heroImage from "@/assets/hero-beach.jpg";
 import categoryLuxury from "@/assets/category-luxury.jpg";
@@ -18,6 +19,7 @@ import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Index = () => {
   const { t } = useLanguage();
+  const { openAI } = useConversationalAI();
   
   return (
     <div className="min-h-screen bg-background">
@@ -69,7 +71,11 @@ const Index = () => {
                   className="border border-input/20 text-lg h-12 bg-background/95 text-foreground placeholder:text-muted-foreground focus:border-primary"
                 />
               </div>
-              <Button size="lg" className="h-12 px-8 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary">
+              <Button 
+                size="lg" 
+                onClick={openAI}
+                className="h-12 px-8 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
+              >
                 <Search className="h-5 w-5 mr-2" />
                 {t('hero.cta')}
               </Button>
