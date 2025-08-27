@@ -3,6 +3,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Search, Plane, MapPin, Star, MessageCircle } from "lucide-react";
 import heroImage from "@/assets/hero-beach.jpg";
+import categoryLuxury from "@/assets/category-luxury.jpg";
+import categoryAdventure from "@/assets/category-adventure.jpg";
+import categoryBeach from "@/assets/category-beach.jpg";
+import categoryCulture from "@/assets/category-culture.jpg";
+import categoryFamily from "@/assets/category-family.jpg";
+import categoryEco from "@/assets/category-eco.jpg";
+import destinationSantorini from "@/assets/destination-santorini.jpg";
+import destinationBali from "@/assets/destination-bali.jpg";
+import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Index = () => {
   return (
@@ -87,16 +96,19 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
-              { title: "Luxe & Prestige", icon: "💎", description: "Expériences exclusives et raffinées" },
-              { title: "Aventure & Nature", icon: "⛰️", description: "Explorez les merveilles naturelles" },
-              { title: "Plages & Détente", icon: "🏝️", description: "Évasion tropicale et bien-être" },
-              { title: "Culture & Histoire", icon: "🌍", description: "Immersion dans l'art et l'histoire" },
-              { title: "Famille & Enfants", icon: "👨‍👩‍👧", description: "Aventures pour toute la famille" },
-              { title: "Éco-responsable", icon: "🌱", description: "Voyagez en préservant la planète" }
+              { title: "Luxe & Prestige", image: categoryLuxury, description: "Expériences exclusives et raffinées" },
+              { title: "Aventure & Nature", image: categoryAdventure, description: "Explorez les merveilles naturelles" },
+              { title: "Plages & Détente", image: categoryBeach, description: "Évasion tropicale et bien-être" },
+              { title: "Culture & Histoire", image: categoryCulture, description: "Immersion dans l'art et l'histoire" },
+              { title: "Famille & Enfants", image: categoryFamily, description: "Aventures pour toute la famille" },
+              { title: "Éco-responsable", image: categoryEco, description: "Voyagez en préservant la planète" }
             ].map((category, index) => (
-              <Card key={index} className="group hover:shadow-glow transition-all duration-300 cursor-pointer">
+              <Card key={index} className="group hover:shadow-glow transition-all duration-300 cursor-pointer overflow-hidden">
+                <div 
+                  className="h-48 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${category.image})` }}
+                />
                 <CardHeader className="text-center">
-                  <div className="text-4xl mb-4">{category.icon}</div>
                   <CardTitle className="text-xl font-display">{category.title}</CardTitle>
                   <CardDescription className="text-muted-foreground">
                     {category.description}
@@ -120,12 +132,15 @@ const Index = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
-              { name: "Santorini", country: "Grèce", rating: 4.9, price: "À partir de 899€" },
-              { name: "Bali", country: "Indonésie", rating: 4.8, price: "À partir de 1299€" },
-              { name: "Kyoto", country: "Japon", rating: 4.9, price: "À partir de 1599€" }
+              { name: "Santorini", country: "Grèce", rating: 4.9, price: "À partir de 899€", image: destinationSantorini },
+              { name: "Bali", country: "Indonésie", rating: 4.8, price: "À partir de 1299€", image: destinationBali },
+              { name: "Kyoto", country: "Japon", rating: 4.9, price: "À partir de 1599€", image: destinationKyoto }
             ].map((destination, index) => (
               <Card key={index} className="group hover:shadow-glow transition-all duration-300 cursor-pointer overflow-hidden">
-                <div className="h-48 bg-gradient-to-br from-primary-light to-primary" />
+                <div 
+                  className="h-48 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${destination.image})` }}
+                />
                 <CardContent className="p-6">
                   <div className="flex justify-between items-start mb-2">
                     <div>
