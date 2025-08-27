@@ -299,7 +299,7 @@ const Packages = () => {
               <Link to="/" className="text-foreground hover:text-primary transition-colors">Accueil</Link>
               <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">Destinations</Link>
               <a href="#" className="text-primary font-semibold">Voyages</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">Activités</a>
+              <Link to="/activities" className="text-foreground hover:text-primary transition-colors">Activités</Link>
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>
             </div>

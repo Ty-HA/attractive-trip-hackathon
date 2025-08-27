@@ -152,7 +152,7 @@ const Destinations = () => {
               <Link to="/" className="text-foreground hover:text-primary transition-colors">Accueil</Link>
               <a href="#" className="text-primary font-semibold">Destinations</a>
               <Link to="/packages" className="text-foreground hover:text-primary transition-colors">Voyages</Link>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">Activités</a>
+              <Link to="/activities" className="text-foreground hover:text-primary transition-colors">Activités</Link>
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>
             </div>

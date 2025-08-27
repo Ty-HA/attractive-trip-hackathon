@@ -30,7 +30,7 @@ const Index = () => {
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">Destinations</Link>
               <Link to="/packages" className="text-foreground hover:text-primary transition-colors">Voyages</Link>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">Activités</a>
+              <Link to="/activities" className="text-foreground hover:text-primary transition-colors">Activités</Link>
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>
             </div>
