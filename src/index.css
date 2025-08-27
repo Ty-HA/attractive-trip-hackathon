@@ -2,57 +2,73 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* IA Attractive Trip - Travel Platform Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@400;500;600;700;800;900&display=swap');
 
 @layer base {
   :root {
+    /* Base Colors */
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --foreground: 215 25% 15%;
 
+    /* Travel Brand Colors - Turquoise & Gold */
+    --primary: 180 100% 42%; /* Turquoise */
+    --primary-foreground: 0 0% 100%;
+    --primary-light: 180 100% 85%;
+    --primary-dark: 180 100% 25%;
+
+    --secondary: 45 100% 51%; /* Gold */
+    --secondary-foreground: 215 25% 15%;
+    --secondary-light: 45 100% 85%;
+    --secondary-dark: 45 100% 35%;
+
+    /* Surface Colors */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 215 25% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 215 25% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 215 15% 55%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --accent: 180 15% 95%;
+    --accent-foreground: 215 25% 15%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    /* UI Elements */
+    --border: 210 15% 90%;
+    --input: 210 15% 94%;
+    --ring: 180 100% 42%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --radius: 12px;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Travel Gradients */
+    --gradient-ocean: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-dark)));
+    --gradient-sunset: linear-gradient(135deg, hsl(var(--secondary)), hsl(var(--primary)));
+    --gradient-luxury: linear-gradient(135deg, hsl(var(--secondary-dark)), hsl(var(--secondary)));
+    --gradient-hero: linear-gradient(135deg, hsl(var(--primary) / 0.95), hsl(var(--primary-dark) / 0.95));
 
-    --radius: 0.5rem;
+    /* Shadows */
+    --shadow-soft: 0 4px 20px hsl(var(--primary) / 0.1);
+    --shadow-glow: 0 8px 32px hsl(var(--primary) / 0.15);
+    --shadow-luxury: 0 12px 48px hsl(var(--secondary) / 0.2);
 
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Sidebar */
     --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 215 25% 15%;
+    --sidebar-primary: 180 100% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 180 15% 95%;
+    --sidebar-accent-foreground: 215 25% 15%;
+    --sidebar-border: 210 15% 90%;
+    --sidebar-ring: 180 100% 42%;
   }
 
   .dark {
@@ -91,6 +107,47 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+  .dark {
+    --background: 215 25% 8%;
+    --foreground: 0 0% 98%;
+
+    --card: 215 25% 12%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 215 25% 12%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 180 100% 45%;
+    --primary-foreground: 215 25% 8%;
+    --primary-light: 180 100% 85%;
+    --primary-dark: 180 100% 25%;
+
+    --secondary: 45 100% 55%;
+    --secondary-foreground: 215 25% 8%;
+    --secondary-light: 45 100% 85%;
+    --secondary-dark: 45 100% 35%;
+
+    --muted: 215 20% 15%;
+    --muted-foreground: 215 15% 65%;
+
+    --accent: 215 20% 18%;
+    --accent-foreground: 0 0% 98%;
+
+    --border: 215 20% 18%;
+    --input: 215 20% 18%;
+    --ring: 180 100% 45%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+
+    --sidebar-background: 215 25% 10%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 180 100% 45%;
+    --sidebar-primary-foreground: 215 25% 8%;
+    --sidebar-accent: 215 20% 15%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 215 20% 15%;
+    --sidebar-ring: 180 100% 45%;
   }
 }
 
