@@ -4,10 +4,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import Destinations from "./pages/Destinations";
+import DestinationDetail from "./pages/DestinationDetail";
 import Packages from "./pages/Packages";
 import Activities from "./pages/Activities";
+import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
 import CGU from "./pages/CGU";
 import CGV from "./pages/CGV";
 import MentionsLegales from "./pages/MentionsLegales";
@@ -21,30 +25,35 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <LanguageProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <div className="min-h-screen flex flex-col">
-            <div className="flex-1">
-              <Routes>
-                <Route path="/" element={<Index />} />
-                <Route path="/destinations" element={<Destinations />} />
-                <Route path="/packages" element={<Packages />} />
-                <Route path="/activities" element={<Activities />} />
-                <Route path="/cgu" element={<CGU />} />
-                <Route path="/cgv" element={<CGV />} />
-                <Route path="/mentions-legales" element={<MentionsLegales />} />
-                <Route path="/politique-cookies" element={<PolitiqueCookies />} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+      <AuthProvider>
+        <LanguageProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="min-h-screen flex flex-col">
+              <div className="flex-1">
+                <Routes>
+                  <Route path="/" element={<Index />} />
+                  <Route path="/destinations" element={<Destinations />} />
+                  <Route path="/destinations/:slug" element={<DestinationDetail />} />
+                  <Route path="/packages" element={<Packages />} />
+                  <Route path="/activities" element={<Activities />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/admin" element={<Admin />} />
+                  <Route path="/cgu" element={<CGU />} />
+                  <Route path="/cgv" element={<CGV />} />
+                  <Route path="/mentions-legales" element={<MentionsLegales />} />
+                  <Route path="/politique-cookies" element={<PolitiqueCookies />} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </div>
+              <Footer />
+              <CookieBanner />
             </div>
-            <Footer />
-            <CookieBanner />
-          </div>
-        </BrowserRouter>
-      </LanguageProvider>
+          </BrowserRouter>
+        </LanguageProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

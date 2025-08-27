@@ -21,6 +21,7 @@ const Destinations = () => {
     {
       id: 1,
       name: "Santorini",
+      slug: "santorini-grece",
       country: "Grèce",
       continent: "europe",
       price: "À partir de 899€",
@@ -34,6 +35,7 @@ const Destinations = () => {
     {
       id: 2,
       name: "Bali",
+      slug: "bali-indonesie",
       country: "Indonésie",
       continent: "asia",
       price: "À partir de 1299€",
@@ -47,6 +49,7 @@ const Destinations = () => {
     {
       id: 3,
       name: "Kyoto",
+      slug: "kyoto-japon",
       country: "Japon",
       continent: "asia",
       price: "À partir de 1599€",
@@ -60,6 +63,7 @@ const Destinations = () => {
     {
       id: 4,
       name: "Marrakech",
+      slug: "marrakech-maroc",
       country: "Maroc",
       continent: "africa",
       price: "À partir de 699€",
@@ -73,6 +77,7 @@ const Destinations = () => {
     {
       id: 5,
       name: "New York",
+      slug: "new-york-usa",
       country: "États-Unis",
       continent: "america",
       price: "À partir de 1899€",
@@ -86,6 +91,7 @@ const Destinations = () => {
     {
       id: 6,
       name: "Sydney",
+      slug: "sydney-australie",
       country: "Australie",
       continent: "oceania",
       price: "À partir de 2299€",
@@ -278,9 +284,11 @@ const Destinations = () => {
                       {destination.duration}
                     </p>
                   </div>
-                  <Button size="sm" className="bg-gradient-to-r from-primary to-primary-dark">
-                    Découvrir
-                  </Button>
+                  <Link to={`/destinations/${destination.slug}`}>
+                    <Button size="sm" className="bg-gradient-to-r from-primary to-primary-dark">
+                      Découvrir
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
