@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Search, Plane, MapPin, Star, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import heroImage from "@/assets/hero-beach.jpg";
 import categoryLuxury from "@/assets/category-luxury.jpg";
 import categoryAdventure from "@/assets/category-adventure.jpg";
@@ -27,7 +28,7 @@ const Index = () => {
               </h1>
             </div>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#" className="text-foreground hover:text-primary transition-colors">Destinations</a>
+              <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">Destinations</Link>
               <a href="#" className="text-foreground hover:text-primary transition-colors">Voyages</a>
               <a href="#" className="text-foreground hover:text-primary transition-colors">Activités</a>
               <Button variant="outline">Connexion</Button>
