@@ -151,7 +151,7 @@ const Destinations = () => {
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/" className="text-foreground hover:text-primary transition-colors">Accueil</Link>
               <a href="#" className="text-primary font-semibold">Destinations</a>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">Voyages</a>
+              <Link to="/packages" className="text-foreground hover:text-primary transition-colors">Voyages</Link>
               <a href="#" className="text-foreground hover:text-primary transition-colors">Activités</a>
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>

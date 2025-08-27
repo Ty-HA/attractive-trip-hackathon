@@ -29,7 +29,7 @@ const Index = () => {
             </div>
             <div className="hidden md:flex items-center space-x-8">
               <Link to="/destinations" className="text-foreground hover:text-primary transition-colors">Destinations</Link>
-              <a href="#" className="text-foreground hover:text-primary transition-colors">Voyages</a>
+              <Link to="/packages" className="text-foreground hover:text-primary transition-colors">Voyages</Link>
               <a href="#" className="text-foreground hover:text-primary transition-colors">Activités</a>
               <Button variant="outline">Connexion</Button>
               <Button>S'inscrire</Button>
