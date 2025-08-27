@@ -1,1 +1,4 @@
 project_id = "fzhbetzkstoghubeolku"
+
+[functions.travel-concierge]
+verify_jwt = false

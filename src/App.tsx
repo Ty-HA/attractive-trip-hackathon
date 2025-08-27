@@ -12,6 +12,7 @@ import Packages from "./pages/Packages";
 import Activities from "./pages/Activities";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
+import TravelConciergePage from "./pages/TravelConcierge";
 import CGU from "./pages/CGU";
 import CGV from "./pages/CGV";
 import MentionsLegales from "./pages/MentionsLegales";
@@ -40,6 +41,7 @@ const App = () => (
                   <Route path="/activities" element={<Activities />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/concierge" element={<TravelConciergePage />} />
                   <Route path="/cgu" element={<CGU />} />
                   <Route path="/cgv" element={<CGV />} />
                   <Route path="/mentions-legales" element={<MentionsLegales />} />

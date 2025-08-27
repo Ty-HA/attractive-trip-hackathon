@@ -77,14 +77,16 @@ const Index = () => {
 
           {/* AI Chat Trigger */}
           <div className="mt-8">
-            <Button 
-              variant="secondary" 
-              size="lg"
-              className="bg-secondary/90 hover:bg-secondary text-secondary-foreground shadow-luxury"
-            >
-              <MessageCircle className="h-5 w-5 mr-2" />
-              Parlez à votre conseiller IA
-            </Button>
+            <Link to="/concierge">
+              <Button 
+                variant="secondary" 
+                size="lg"
+                className="bg-secondary/90 hover:bg-secondary text-secondary-foreground shadow-luxury"
+              >
+                <MessageCircle className="h-5 w-5 mr-2" />
+                Parlez à votre conseiller IA
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
