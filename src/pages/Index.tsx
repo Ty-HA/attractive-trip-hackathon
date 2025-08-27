@@ -64,8 +64,8 @@ const Index = () => {
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
                 <Input 
-                  placeholder="Où souhaitez-vous partir ?"
-                  className="border-0 text-lg h-12"
+                  placeholder={t('hero.search.placeholder')}
+                  className="border border-input/20 text-lg h-12 bg-background/95 text-foreground placeholder:text-muted-foreground focus:border-primary"
                 />
               </div>
               <Button size="lg" className="h-12 px-8 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary">
@@ -84,7 +84,7 @@ const Index = () => {
                 className="bg-secondary/90 hover:bg-secondary text-secondary-foreground shadow-luxury"
               >
                 <MessageCircle className="h-5 w-5 mr-2" />
-                Parlez à votre conseiller IA
+                {t('hero.ai.button')}
               </Button>
             </Link>
           </div>
