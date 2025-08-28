@@ -164,52 +164,97 @@ serve(async (req) => {
       Restaurants : ${sampleRestaurants?.map(r => `${r.name} (${r.cuisine_type}, ${r.city})`).join(', ')}`;
     }
 
-    console.log('Sending request to Hugging Face API (Zephyr model)...');
+    // Helper functions for robust HF parsing
+    async function readHFJson(res: Response) {
+      const txt = await res.text();
+      // Log côté serveur uniquement (pour debug); limite la taille
+      console.log('HF raw response (first 800 chars):', txt.slice(0, 800));
+      try {
+        return JSON.parse(txt);
+      } catch {
+        return txt; // cas rare: texte non-JSON (devrait pas arriver)
+      }
+    }
 
-    // Use Hugging Face Inference API with a widely available instruct model
-    const response = await fetch('https://api-inference.huggingface.co/models/HuggingFaceH4/zephyr-7b-beta', {
+    function extractTextFromHF(data: any): string | null {
+      // Cas le plus courant: [{ generated_text: "..." }]
+      if (Array.isArray(data) && data.length && typeof data[0]?.generated_text === 'string') {
+        return data[0].generated_text;
+      }
+      // Certains modèles renvoient un objet { generated_text: "..." }
+      if (data && typeof data.generated_text === 'string') {
+        return data.generated_text;
+      }
+      // Erreur HF standard
+      if (data && data.error) {
+        return `__ERR__: ${data.error}`;
+      }
+      // Message "loading" possible
+      if (data && typeof data.estimated_time !== 'undefined') {
+        return `__LOADING__: estimated_time=${data.estimated_time}s`;
+      }
+      return null;
+    }
+
+    function buildZephyrPrompt(system: string, user: string) {
+      // ChatML-like pour Zephyr
+      return `<|system|>\n${system}\n<|user|>\n${user}\n<|assistant|>\n`;
+    }
+
+    const HUGGINGFACE_MODEL = Deno.env.get('HUGGINGFACE_MODEL') ?? 'HuggingFaceH4/zephyr-7b-beta';
+
+    console.log(`Sending request to Hugging Face API model=${HUGGINGFACE_MODEL}...`);
+
+    const inputs = buildZephyrPrompt(systemPrompt + contextInfo, message);
+
+    const response = await fetch(`https://api-inference.huggingface.co/models/${HUGGINGFACE_MODEL}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${huggingFaceApiKey}`,
         'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({
-        inputs: `System: ${systemPrompt + contextInfo}\nUser: ${message}\nAssistant:`,
+        inputs,
         parameters: {
-          max_new_tokens: 1000,
+          max_new_tokens: 512,   // 1000 peut faire ramer certains endpoints
           temperature: 0.7,
           do_sample: true
         },
         options: {
-          wait_for_model: true
+          wait_for_model: true,  // évite le 503 à froid
+          use_cache: true
         }
       }),
     });
 
+    // Lis toujours le body pour voir l'erreur réelle HF
+    const data = await readHFJson(response);
+
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Hugging Face API Error:', errorData);
-      throw new Error(`Hugging Face API error: ${response.status} ${response.statusText}`);
+      // On renvoie le vrai message d'erreur HF au client pour debug
+      const msg = typeof data === 'string' ? data : (data?.error ?? `${response.status} ${response.statusText}`);
+      console.error('Hugging Face API Error:', msg);
+      throw new Error(`Hugging Face API error: ${msg}`);
     }
 
-    const data = await response.json();
-    console.log('Hugging Face API Response received');
-
-    let aiResponse = '';
-    if (Array.isArray(data) && data[0]?.generated_text) {
-      // Extract the assistant's response from the generated text
-      const fullText = data[0].generated_text;
-      const assistantStart = fullText.lastIndexOf('<|im_start|>assistant\n');
-      if (assistantStart !== -1) {
-        aiResponse = fullText.substring(assistantStart + '<|im_start|>assistant\n'.length).trim();
-      } else {
-        aiResponse = fullText;
-      }
-    } else if (data.generated_text) {
-      aiResponse = data.generated_text;
-    } else {
-      aiResponse = "Je suis désolé, je n'ai pas pu traiter votre demande. Pouvez-vous reformuler ?";
+    let aiResponse = extractTextFromHF(data) ?? '';
+    if (aiResponse.startsWith('__ERR__')) {
+      // Erreur logique renvoyée par HF (ex: modèle en maintenance)
+      throw new Error(aiResponse.replace('__ERR__:', '').trim());
     }
+    if (aiResponse.startsWith('__LOADING__')) {
+      // Modèle en warmup : renvoie un message clair côté client
+      aiResponse = "Le modèle se réveille (quelques secondes). Réessaie ta question 👍";
+    }
+
+    // Optionnel: si tu veux enlever le préfixe prompt recraché
+    const cut = aiResponse.lastIndexOf('<|assistant|>');
+    if (cut !== -1) {
+      aiResponse = aiResponse.slice(cut + '<|assistant|>'.length).trim();
+    }
+
+    console.log('Processed AI response:', aiResponse.slice(0, 200) + '...');
 
     return new Response(
       JSON.stringify({ 
