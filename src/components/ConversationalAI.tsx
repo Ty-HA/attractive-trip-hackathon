@@ -235,17 +235,22 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
                   ? 'bg-gradient-to-r from-blue-500/90 to-blue-600/90 text-white border-blue-400/30'
                   : 'bg-white/90 text-gray-800 border-white/40'
               }`}>
-                <div className="text-base leading-relaxed"
-                     dangerouslySetInnerHTML={{
-                       __html: message.text
-                         .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-                         .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
-                         .replace(/###\s+(.*?)$/gm, '<h3 class="font-bold text-lg mt-3 mb-2">$1</h3>')
-                         .replace(/##\s+(.*?)$/gm, '<h2 class="font-bold text-xl mt-4 mb-2">$1</h2>')
-                         .replace(/\n\n/g, '</p><p class="mt-3">')
-                         .replace(/^/, '<p>')
-                         .replace(/$/, '</p>')
-                     }}
+                <div
+                  className="text-base leading-relaxed"
+                  dangerouslySetInnerHTML={{
+                    __html: message.text
+                      // Gras, italique, titres
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                      .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+                      .replace(/###\s+(.*?)$/gm, '<h3 class="font-bold text-lg mt-3 mb-2">$1</h3>')
+                      .replace(/##\s+(.*?)$/gm, '<h2 class="font-bold text-xl mt-4 mb-2">$1</h2>')
+                      // Liens cliquables
+                      .replace(/(https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+)(?![^<]*>|[^\[]*\])/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">$1</a>')
+                      // Paragraphes
+                      .replace(/\n\n/g, '</p><p class="mt-3">')
+                      .replace(/^/, '<p>')
+                      .replace(/$/, '</p>')
+                  }}
                 />
                 {message.data?.type === 'search_results' && message.data.results?.length > 0 && (
                   renderSearchResults(message.data.results)
