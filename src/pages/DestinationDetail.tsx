@@ -41,8 +41,8 @@ interface Destination {
   highlights?: string[];
   included_services?: string[];
   excluded_services?: string[];
-  itinerary?: any;
-  practical_info?: any;
+  itinerary?: { day: number; title: string; description?: string }[];
+  practical_info?: Record<string, unknown>;
   is_published: boolean;
   is_featured: boolean;
 }
@@ -70,44 +70,57 @@ const DestinationDetail = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const fetchDestination = async () => {
+      try {
+        setLoading(true);
+        
+        // Fetch destination
+        const { data: destinationData, error: destinationError } = await supabase
+          .from('destinations')
+          .select('*')
+          .eq('slug', slug)
+          .eq('is_published', true)
+          .single();
+
+        if (destinationError) {
+          setError('Destination non trouvée');
+          return;
+        }
+
+        setDestination({
+          ...destinationData,
+          itinerary: Array.isArray(destinationData.itinerary)
+            ? destinationData.itinerary
+            : typeof destinationData.itinerary === 'string'
+              ? JSON.parse(destinationData.itinerary)
+              : undefined,
+          practical_info:
+            typeof destinationData.practical_info === 'string'
+              ? JSON.parse(destinationData.practical_info)
+              : (destinationData.practical_info && typeof destinationData.practical_info === 'object')
+                ? destinationData.practical_info
+                : undefined,
+        });
+
+        // Fetch related packages
+        const { data: packagesData } = await supabase
+          .from('packages')
+          .select('*')
+          .eq('destination_id', destinationData.id)
+          .eq('is_available', true);
+
+        setPackages(packagesData || []);
+      } catch (err) {
+        setError('Erreur lors du chargement');
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (slug) {
       fetchDestination();
     }
   }, [slug]);
-
-  const fetchDestination = async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch destination
-      const { data: destinationData, error: destinationError } = await supabase
-        .from('destinations')
-        .select('*')
-        .eq('slug', slug)
-        .eq('is_published', true)
-        .single();
-
-      if (destinationError) {
-        setError('Destination non trouvée');
-        return;
-      }
-
-      setDestination(destinationData);
-
-      // Fetch related packages
-      const { data: packagesData } = await supabase
-        .from('packages')
-        .select('*')
-        .eq('destination_id', destinationData.id)
-        .eq('is_available', true);
-
-      setPackages(packagesData || []);
-    } catch (err) {
-      setError('Erreur lors du chargement');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const getDifficultyLabel = (difficulty?: string) => {
     const labels: { [key: string]: string } = {

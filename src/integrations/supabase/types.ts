@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      chat_history: {
+        Row: {
+          id: number;
+          user_id: string;
+          sender: 'user' | 'ai';
+          message: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: number;
+          user_id: string;
+          sender: 'user' | 'ai';
+          message: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: number;
+          user_id?: string;
+          sender?: 'user' | 'ai';
+          message?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       activities: {
         Row: {
           available_times: string[] | null

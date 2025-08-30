@@ -88,8 +88,15 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         ]);
         return;
       }
+      // Définir une interface pour les lignes d'historique du chat
+      interface ChatHistoryRow {
+        id: number | string;
+        message: string;
+        sender: 'user' | 'ai';
+        created_at?: string;
+      }
       // Transforme les messages pour le state local
-      const historyMessages = data.map((msg: any) => ({
+      const historyMessages = data.map((msg: ChatHistoryRow) => ({
         id: msg.id?.toString() ?? Date.now().toString(),
         text: msg.message,
         sender: msg.sender,
@@ -340,8 +347,8 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
                       .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
                       .replace(/###\s+(.*?)$/gm, '<h3 class="font-bold text-lg mt-3 mb-2">$1</h3>')
                       .replace(/##\s+(.*?)$/gm, '<h2 class="font-bold text-xl mt-4 mb-2">$1</h2>')
-                      // Liens cliquables
-                      .replace(/(https?:\/\/[\w\-._~:/?#\[\]@!$&'()*+,;=%]+)(?![^<]*>|[^\[]*\])/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">$1</a>')
+                      // Liens cliquables (version finale sans escapes inutiles)
+                      .replace(/(https?:\/\/[\w\-._~:/?#@!$&'()*+,;=%]+)(?![^<]*>)/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">$1</a>')
                       // Paragraphes
                       .replace(/\n\n/g, '</p><p class="mt-3">')
                       .replace(/^/, '<p>')
