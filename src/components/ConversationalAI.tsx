@@ -1,20 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageCircle, Send, Loader2, X, Package, MapPin, Calendar, Star } from 'lucide-react';
+import { Send, Loader2, MapPin, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useConversationalAI } from '@/contexts/ConversationalAIContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
-  data?: any;
+  data?: 
+    | { type: 'search_results'; results: SearchResult[]; category: string }
+    | { type: 'booking_started'; item: SearchResult }
+    | undefined;
 }
+
 
 interface SearchResult {
   id: string;
@@ -26,25 +29,44 @@ interface SearchResult {
   description?: string;
 }
 
-const ConversationalAI = () => {
-  const { isOpen, openAI, closeAI } = useConversationalAI();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Bonjour ! Je suis votre assistant de voyage personnel. Je peux vous aider à chercher et réserver des destinations, voyages organisés, activités et restaurants. Que puis-je faire pour vous aujourd\'hui ?',
-      sender: 'ai',
-      timestamp: new Date()
-    }
-  ]);
+interface ConversationalAIProps {
+  inline?: boolean;
+  mobile?: boolean;
+}
+
+const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIProps) => {
+  const { language } = useLanguage();
+  const getWelcomeMessage = React.useCallback(() => {
+    const messages = {
+      fr: 'Bonjour ! Je suis votre assistant de voyage personnel. Je peux vous aider à chercher et réserver des destinations, voyages organisés, activités et restaurants. Que puis-je faire pour vous aujourd\'hui ?',
+      en: 'Hello! I am your personal travel assistant. I can help you search and book destinations, organized trips, activities and restaurants. What can I do for you today?'
+    };
+    return messages[language as keyof typeof messages] || messages.fr;
+  }, [language]);
+
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+  // Initialiser et mettre à jour le message d'accueil
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
-  }, [messages]);
+    setMessages(prev => {
+      const welcomeMessage = {
+        id: '1',
+        text: getWelcomeMessage(),
+        sender: 'ai' as const,
+        timestamp: new Date()
+      };
+      
+      if (prev.length === 0) {
+        // Premier chargement
+        return [welcomeMessage];
+      } else {
+        // Mise à jour de la langue - remplacer le premier message
+        return [welcomeMessage, ...prev.slice(1)];
+      }
+    });
+  }, [getWelcomeMessage]);
 
   const handleSearch = async (query: string, type: 'destinations' | 'packages' | 'activities') => {
     try {
@@ -98,14 +120,16 @@ const ConversationalAI = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageText = inputMessage;
     setInputMessage('');
     setIsLoading(true);
 
     try {
       const { data, error } = await supabase.functions.invoke('travel-concierge', {
         body: {
-          message: inputMessage,
-          type: 'conversation'
+          message: messageText,
+          type: 'conversation',
+          language: language
         }
       });
 
@@ -124,17 +148,17 @@ const ConversationalAI = () => {
       if (data.suggestedActions?.includes('search')) {
         const searchTerms = ['destination', 'voyage', 'activité'];
         const foundTerm = searchTerms.find(term => 
-          inputMessage.toLowerCase().includes(term)
+          messageText.toLowerCase().includes(term)
         );
         
         if (foundTerm) {
           setTimeout(() => {
             if (foundTerm === 'destination') {
-              handleSearch(inputMessage, 'destinations');
+              handleSearch(messageText, 'destinations');
             } else if (foundTerm === 'voyage') {
-              handleSearch(inputMessage, 'packages');
+              handleSearch(messageText, 'packages');
             } else if (foundTerm === 'activité') {
-              handleSearch(inputMessage, 'activities');
+              handleSearch(messageText, 'activities');
             }
           }, 1000);
         }
@@ -144,7 +168,9 @@ const ConversationalAI = () => {
       console.error('Error:', error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
-        text: 'Désolé, j\'ai rencontré un problème. Pouvez-vous reformuler votre demande ?',
+        text: language === 'en' 
+          ? 'Sorry, I encountered a problem. Could you please rephrase your request?'
+          : 'Désolé, j\'ai rencontré un problème. Pouvez-vous reformuler votre demande ?',
         sender: 'ai',
         timestamp: new Date()
       };
@@ -154,7 +180,7 @@ const ConversationalAI = () => {
     }
   };
 
-  const renderSearchResults = (results: SearchResult[], category: string) => {
+  const renderSearchResults = (results: SearchResult[]) => {
     return (
       <div className="grid gap-3 mt-3">
         {results.map((item) => (
@@ -192,82 +218,92 @@ const ConversationalAI = () => {
     );
   };
 
-  const renderMessage = (message: Message) => (
-    <div key={message.id} className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
-      <div className={`max-w-[80%] p-3 rounded-lg ${
-        message.sender === 'user' 
-          ? 'bg-primary text-primary-foreground' 
-          : 'bg-accent text-accent-foreground'
-      }`}>
-        <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-        {message.data?.type === 'search_results' && message.data.results?.length > 0 && (
-          renderSearchResults(message.data.results, message.data.category)
-        )}
-        <p className="text-xs opacity-60 mt-1">
-          {message.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-        </p>
-      </div>
-    </div>
-  );
 
-  if (!isOpen) {
+
+  // Mode inline : chat intégré dans la section hero
+  if (inline) {
     return (
-      <Button
-        onClick={openAI}
-        className="fixed bottom-8 right-8 h-14 w-14 rounded-full shadow-luxury bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
-        size="lg"
-      >
-        <MessageCircle className="h-6 w-6" />
-      </Button>
-    );
-  }
+      <div className="w-full space-y-8 max-h-[60vh] overflow-y-auto scrollbar-hide">
+        {/* Messages Container */}
+        <div className="space-y-6">
+          {messages.map((message) => (
+            <div key={message.id} className={`flex ${
+              message.sender === 'user' ? 'justify-end' : 'justify-start'
+            }`}>
+              <div className={`w-full p-5 rounded-3xl backdrop-blur-md border shadow-2xl ${
+                message.sender === 'user'
+                  ? 'bg-gradient-to-r from-blue-500/90 to-blue-600/90 text-white border-blue-400/30'
+                  : 'bg-white/90 text-gray-800 border-white/40'
+              }`}>
+                <div className="text-base leading-relaxed"
+                     dangerouslySetInnerHTML={{
+                       __html: message.text
+                         .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                         .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+                         .replace(/###\s+(.*?)$/gm, '<h3 class="font-bold text-lg mt-3 mb-2">$1</h3>')
+                         .replace(/##\s+(.*?)$/gm, '<h2 class="font-bold text-xl mt-4 mb-2">$1</h2>')
+                         .replace(/\n\n/g, '</p><p class="mt-3">')
+                         .replace(/^/, '<p>')
+                         .replace(/$/, '</p>')
+                     }}
+                />
+                {message.data?.type === 'search_results' && message.data.results?.length > 0 && (
+                  renderSearchResults(message.data.results)
+                )}
+                <p className={`text-xs mt-3 ${
+                  message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
+                }`}>
+                  {message.timestamp.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          ))}
 
-  return (
-    <Card className="fixed bottom-8 right-8 w-96 h-[500px] shadow-2xl z-50">
-      <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary to-primary-dark text-white rounded-t-lg">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5" />
-          <span className="font-semibold">Assistant de Voyage IA</span>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={closeAI}
-          className="text-white hover:bg-white/10"
-        >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
-      
-      <CardContent className="p-0 flex flex-col h-[calc(500px-73px)]">
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-          {messages.map(renderMessage)}
+          {/* Loading indicator */}
           {isLoading && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-accent text-accent-foreground p-3 rounded-lg">
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex justify-start">
+              <div className="bg-white/90 p-5 rounded-3xl shadow-2xl border border-white/40 backdrop-blur-md">
+                <div className="flex items-center gap-3 text-gray-600">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                  <span className="text-sm font-medium">
+                    {language === 'en' ? 'AI is thinking...' : 'L\'IA réfléchit...'}
+                  </span>
+                </div>
               </div>
             </div>
           )}
-        </ScrollArea>
-        
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
+        </div>
+
+        {/* Input field - Sticky at bottom */}
+        <div className="sticky bottom-0 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/40 p-5">
+          <div className="flex gap-4">
             <Input
-              placeholder="Tapez votre message..."
+              placeholder={
+                language === 'en' 
+                  ? "Ask about your next destination... ✈️"
+                  : "Demandez-moi votre prochaine destination... ✈️"
+              }
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-              className="flex-1"
+              onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+              disabled={isLoading}
+              className="flex-1 text-gray-900 placeholder:text-gray-500 border-gray-200 rounded-2xl h-12 text-base bg-white/80 border-2 focus:border-blue-400 focus:bg-white transition-all"
             />
-            <Button onClick={sendMessage} disabled={!inputMessage.trim() || isLoading}>
-              <Send className="h-4 w-4" />
+            <Button 
+              onClick={sendMessage} 
+              disabled={!inputMessage.trim() || isLoading}
+              className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl px-6 h-12 shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
+            >
+              <Send className="h-5 w-5" />
             </Button>
           </div>
         </div>
-      </CardContent>
-    </Card>
-  );
+      </div>
+    );
+  }
+
+  // Pas de mode popup flottant
+  return null;
 };
 
 export default ConversationalAI;

@@ -1,7 +1,19 @@
 // supabase/functions/travel-concierge/index.ts
+// @ts-ignore - Deno runtime imports
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+// @ts-ignore - Deno runtime imports
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+// @ts-ignore - Deno runtime imports
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
+
+// Type declarations for local IDE (ignored in Deno runtime)
+declare global {
+  const Deno: {
+    env: {
+      get(name: string): string | undefined;
+    };
+  };
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -17,63 +29,79 @@ function getEnv(name: string, fallback?: string) {
 const SUPABASE_URL = getEnv("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = getEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-// ⭐ Harmonise le nom de ta clé HF ici : mets le VRAI nom que tu as saisi dans Supabase
-const HF_API_KEY =
-  getEnv("HUGGING_FACE_API_KEY") ||
-  getEnv("HUGGINGFACE_API_KEY") ||
-  getEnv("HUGGINGFACEHUB_API_TOKEN") ||
-  getEnv("HF_TOKEN");
+// API Keys - trying multiple possible env var names
+const PERPLEXITY_API_KEY = getEnv("PERPLEXITY_API_KEY") || getEnv("ERPLEXITY_API_KEY");
 
-const HF_MODEL = getEnv("HUGGINGFACE_MODEL", "HuggingFaceH4/zephyr-7b-beta");
+const PERPLEXITY_MODEL = getEnv("PERPLEXITY_MODEL", "sonar");
 
-function buildZephyrPrompt(system: string, user: string) {
-  // ChatML-like format supporté par Zephyr
-  return `<|system|>\n${system}\n<|user|>\n${user}\n<|assistant|>\n`;
-}
+async function callPerplexityAPI(system: string, user: string) {
+  const requestBody = {
+    model: PERPLEXITY_MODEL,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user }
+    ],
+    max_tokens: 1024,
+    temperature: 0.7,
+    stream: false
+  };
 
-async function readHFJson(res: Response) {
-  const txt = await res.text();
-  console.log("HF raw (first 600 chars):", txt.slice(0, 600));
-  try {
-    return JSON.parse(txt);
-  } catch {
-    return txt;
+  console.log("Calling Perplexity with model:", PERPLEXITY_MODEL);
+  console.log("Request body:", JSON.stringify(requestBody, null, 2));
+
+  const response = await fetch("https://api.perplexity.ai/chat/completions", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${PERPLEXITY_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const error = await response.text();
+    console.error("Perplexity API error response:", error);
+    throw new Error(`Perplexity API error: ${response.status} ${response.statusText} - ${error}`);
   }
+
+  const data = await response.json();
+  console.log("Perplexity response:", JSON.stringify(data, null, 2));
+  return data.choices[0]?.message?.content || "Désolé, je n'ai pas pu générer une réponse.";
 }
 
-function extractTextFromHF(data: any): string | null {
-  if (Array.isArray(data) && data[0]?.generated_text) return data[0].generated_text as string;
-  if (data?.generated_text) return data.generated_text as string;
-  if (data?.error) return `__ERR__: ${data.error}`;
-  if (typeof data?.estimated_time !== "undefined") return `__LOADING__: ${data.estimated_time}s`;
-  return null;
-}
-
-serve(async (req) => {
+serve(async (req: Request) => {
   // CORS preflight
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 
   // Sanity env check (sans exposer les valeurs)
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error("Missing Supabase envs: URL or SERVICE_ROLE_KEY");
-    return new Response(JSON.stringify({ error: "Server not configured (Supabase envs)" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Server not configured (Supabase envs)" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { message = "", action } = body as {
-      message?: string;
-      action?: { type: string; query?: string; id?: string };
-    };
+    const { message = "", action, language = "fr" } = body;
+    
+    console.log("Request body:", JSON.stringify(body, null, 2));
+    console.log("Detected language:", language);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -163,20 +191,62 @@ serve(async (req) => {
       }
     }
 
-    // ---- Conversation (HF) ----
-    if (!HF_API_KEY) {
-      console.error("Missing HF API key (check env name)");
+    // ---- Conversation (Perplexity) ----
+    console.log("Checking Perplexity API key...", PERPLEXITY_API_KEY ? "Found" : "Missing");
+    if (!PERPLEXITY_API_KEY) {
+      console.error("Missing Perplexity API key - check your environment variables");
       return new Response(
-        JSON.stringify({ error: "HF not configured. Set HUGGING_FACE_API_KEY (or HF_TOKEN)." }),
+        JSON.stringify({ error: "Perplexity API not configured. Set PERPLEXITY_API_KEY." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const systemPrompt = `Tu es un assistant de voyage conversationnel qui aide à:
-- Rechercher et réserver des destinations, voyages organisés, activités et restaurants
-- Donner des conseils personnalisés
-- Guider l'utilisateur pas à pas pour réserver
-Utilise un ton naturel en français.`;
+    const systemPrompts = {
+      fr: `Tu es un assistant de voyage conversationnel expert qui aide à créer des voyages sur mesure. Tu dois:
+
+1. PLANIFICATION COMPLÈTE:
+- Comprendre les préférences du voyageur (budget, dates, style de voyage, intérêts)
+- Proposer un itinéraire détaillé jour par jour
+- Suggérer hébergements, activités, restaurants, transports
+- Donner des conseils pratiques (météo, culture, sécurité)
+
+2. CONVERSATION NATURELLE:
+- Poser des questions de suivi pour personnaliser le voyage
+- Être proactif dans les suggestions
+- Maintenir un ton amical et professionnel
+- Guider vers une réservation complète
+
+3. FORMAT DE RÉPONSE:
+- Utilise des sections claires avec des titres
+- Inclus des détails pratiques (prix, durées, horaires)
+- Propose toujours des alternatives
+- Termine par une question pour continuer la conversation
+
+IMPORTANT: Réponds TOUJOURS et UNIQUEMENT en français.`,
+      en: `You are a conversational travel expert assistant that helps create personalized trips. You must:
+
+1. COMPLETE PLANNING:
+- Understand traveler preferences (budget, dates, travel style, interests)
+- Propose detailed day-by-day itineraries
+- Suggest accommodations, activities, restaurants, transportation
+- Provide practical advice (weather, culture, safety)
+
+2. NATURAL CONVERSATION:
+- Ask follow-up questions to personalize the trip
+- Be proactive with suggestions
+- Maintain a friendly and professional tone
+- Guide towards complete booking
+
+3. RESPONSE FORMAT:
+- Use clear sections with titles
+- Include practical details (prices, durations, schedules)
+- Always offer alternatives
+- End with a question to continue the conversation
+
+IMPORTANT: Always respond ONLY in English. Never use French or any other language.`
+    };
+
+    const systemPrompt = systemPrompts[language as keyof typeof systemPrompts] || systemPrompts.fr;
 
     // Petit contexte (non bloquant)
     let contextInfo = "";
@@ -184,78 +254,37 @@ Utilise un ton naturel en français.`;
       const [{ data: d1 }, { data: d2 }, { data: d3 }] = await Promise.all([
         supabase.from("destinations").select("title,country").eq("is_published", true).limit(3),
         supabase.from("packages").select("title,duration_days").eq("is_available", true).limit(3),
-        supabase.from("restaurants").select("name,city,cuisine_type").eq("is_available", true).limit(3),
+        supabase.from("restaurants").select("name,city,cuisine_type").eq("is_available", true).limit(3)
       ]);
       contextInfo =
-        `\n\nContexte:\nDestinations: ${d1?.map((d) => `${d.title} (${d.country})`).join(", ") ?? "—"}` +
-        `\nVoyages: ${d2?.map((p) => `${p.title} (${p.duration_days} jours)`).join(", ") ?? "—"}` +
-        `\nRestaurants: ${d3?.map((r) => `${r.name} (${r.cuisine_type}, ${r.city})`).join(", ") ?? "—"}`;
+        `\n\nContexte:\nDestinations: ${d1?.map((d: { title: string; country: string }) => `${d.title} (${d.country})`).join(", ") ?? "—"}` +
+        `\nVoyages: ${d2?.map((p: { title: string; duration_days: number }) => `${p.title} (${p.duration_days} jours)`).join(", ") ?? "—"}` +
+        `\nRestaurants: ${d3?.map((r: { name: string; cuisine_type: string; city: string }) => `${r.name} (${r.cuisine_type}, ${r.city})`).join(", ") ?? "—"}`;
     } catch (e) {
       console.warn("Context fetch failed (non-blocking):", e);
     }
 
-    const inputs = buildZephyrPrompt(systemPrompt + contextInfo, message ?? "");
-
-    console.log(`HF call model=${HF_MODEL}`);
-    const hfRes = await fetch(`https://api-inference.huggingface.co/models/${HF_MODEL}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${HF_API_KEY}`,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        inputs,
-        parameters: { max_new_tokens: 512, temperature: 0.7, do_sample: true },
-        options: { wait_for_model: true, use_cache: true },
-      }),
-    });
-
-    const hfData = await readHFJson(hfRes);
-
-    if (!hfRes.ok) {
-      const msg =
-        (typeof hfData === "string" ? hfData : hfData?.error) ??
-        `${hfRes.status} ${hfRes.statusText}`;
-      console.error("HF error:", msg);
-      return new Response(JSON.stringify({ error: `Hugging Face API error: ${msg}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    let text = extractTextFromHF(hfData) ?? "";
-    if (text.startsWith("__ERR__")) {
-      const m = text.replace("__ERR__:", "").trim();
-      console.error("HF logical error:", m);
-      return new Response(JSON.stringify({ error: m }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    if (text.startsWith("__LOADING__")) {
-      text = "Le modèle se réveille (quelques secondes). Réessaie ta question 👍";
-    }
-    const cut = text.lastIndexOf("<|assistant|>");
-    if (cut !== -1) text = text.slice(cut + "<|assistant|>".length).trim();
-
+    console.log(`Perplexity call model=${PERPLEXITY_MODEL}`);
+    
+    const text = await callPerplexityAPI(systemPrompt + contextInfo, message ?? "");
+    
     return new Response(
-      JSON.stringify({
+      JSON.stringify({ 
         response: text,
         type: "conversation",
-        suggestedActions:
-          /\b(destination|voyage|activité|restaurant|chercher|trouver|réserver)\b/i.test(message ?? "")
-            ? ["search", "book"]
-            : [],
+        suggestedActions: /\b(destination|voyage|activité|restaurant|chercher|trouver|réserver)\b/i.test(message ?? "")
+          ? ["search", "book"]
+          : [],
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error: any) {
+    
+  } catch (error: unknown) {
     console.error("travel-concierge error:", error);
     return new Response(
       JSON.stringify({
         error: "Edge function failed",
-        details: String(error?.message ?? error),
+        details: String((error as Error)?.message ?? error),
       }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

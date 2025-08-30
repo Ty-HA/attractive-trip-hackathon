@@ -1,11 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Search, Plane, MapPin, Star, MessageCircle } from "lucide-react";
+import { Plane, MapPin, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { useConversationalAI } from "@/contexts/ConversationalAIContext";
 import LanguageSelector from "@/components/LanguageSelector";
+import ConversationalAI from "@/components/ConversationalAI";
 import heroImage from "@/assets/hero-beach.jpg";
 import categoryLuxury from "@/assets/category-luxury.jpg";
 import categoryAdventure from "@/assets/category-adventure.jpg";
@@ -19,7 +18,6 @@ import destinationKyoto from "@/assets/destination-kyoto.jpg";
 
 const Index = () => {
   const { t } = useLanguage();
-  const { openAI } = useConversationalAI();
   
   return (
     <div className="min-h-screen bg-background">
@@ -46,43 +44,28 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative min-h-[80vh] flex items-center justify-center">
-        <div 
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary-dark/60" />
+      {/* Hero Section - Full window with fixed background */}
+      <section 
+        className="relative min-h-screen bg-fixed bg-cover bg-center flex flex-col justify-center"
+        style={{ backgroundImage: `url(${heroImage})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-black/30 to-black/20" />
         
-        <div className="relative z-10 text-center text-white px-6 max-w-4xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-display font-bold mb-6">
-            {t('hero.title')}
-          </h2>
-          <p className="text-xl md:text-2xl mb-8 text-primary-light">
-            {t('hero.subtitle')}
-          </p>
-          
-          {/* Search Bar */}
-          <div className="bg-white rounded-2xl p-6 max-w-2xl mx-auto shadow-luxury">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1">
-                <Input 
-                  placeholder={t('hero.search.placeholder')}
-                  className="border border-input/20 text-lg h-12 bg-background/95 text-foreground placeholder:text-muted-foreground focus:border-primary"
-                />
-              </div>
-              <Button 
-                size="lg" 
-                onClick={openAI}
-                className="h-12 px-8 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary"
-              >
-                <Search className="h-5 w-5 mr-2" />
-                {t('hero.cta')}
-              </Button>
-            </div>
+        <div className="relative z-10 px-6 max-w-6xl mx-auto w-full py-20">
+          {/* Header */}
+          <div className="text-center text-white mb-12">
+            <h2 className="text-5xl md:text-7xl font-display font-bold mb-6">
+              Attractive Trip
+            </h2>
+            <p className="text-xl md:text-2xl text-white/90 mb-8">
+              Explore more. Plan Less. AI handles the rest.
+            </p>
           </div>
-
-          {/* AI Chat Interface - Now handled by ConversationalAI component */}
+          
+          {/* AI Chat Container */}
+          <div className="w-full max-w-4xl mx-auto">
+            <ConversationalAI inline={true} mobile={false} />
+          </div>
         </div>
       </section>
 
