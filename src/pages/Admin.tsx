@@ -16,7 +16,6 @@ import {
   Eye,
   EyeOff
 } from 'lucide-react';
-import Header from '@/components/Header';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -142,7 +141,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+  {/* Header supprimé (déjà global) */}
       
       <div className="container mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-8">

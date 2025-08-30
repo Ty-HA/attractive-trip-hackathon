@@ -15,7 +15,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 
 const Header = () => {
   const { t } = useLanguage();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, loading } = useAuth();
   const displayName = useDisplayName(user);
 
   // Déconnexion + reload pour forcer le refresh du state
@@ -23,7 +23,7 @@ const Header = () => {
     await signOut();
     window.location.reload();
   };
-  
+
   return (
     <nav className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4">
@@ -40,9 +40,9 @@ const Header = () => {
             <Link to="/activities" className="text-foreground hover:text-primary transition-colors">{t('nav.activities')}</Link>
             <Link to="/restaurants" className="text-foreground hover:text-primary transition-colors">{t('nav.restaurants')}</Link>
             <LanguageSelector />
-            
+
             {/* Auth Section */}
-            {user ? (
+            {loading ? null : user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center">

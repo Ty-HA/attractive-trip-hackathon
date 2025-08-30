@@ -20,7 +20,6 @@ import {
   Heart,
   Share2
 } from 'lucide-react';
-import Header from '@/components/Header';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Destination {
@@ -132,7 +131,7 @@ const DestinationDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+  {/* Header supprimé (déjà global) */}
         <div className="container mx-auto px-6 py-12">
           <div className="animate-pulse">
             <div className="bg-muted h-96 rounded-2xl mb-8"></div>
@@ -150,7 +149,7 @@ const DestinationDetail = () => {
   if (error || !destination) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
+  {/* Header supprimé (déjà global) */}
         <div className="container mx-auto px-6 py-12 text-center">
           <h1 className="text-2xl font-bold mb-4">Destination non trouvée</h1>
           <p className="text-muted-foreground mb-6">
@@ -169,7 +168,7 @@ const DestinationDetail = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+  {/* Header supprimé (déjà global) */}
       
       {/* Hero Section */}
       <div className="relative h-96 bg-cover bg-center" 
