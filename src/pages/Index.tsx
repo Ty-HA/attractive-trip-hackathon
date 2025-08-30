@@ -37,8 +37,12 @@ const Index = () => {
               <Link to="/activities" className="text-foreground hover:text-primary transition-colors">{t('nav.activities')}</Link>
               <Link to="/restaurants" className="text-foreground hover:text-primary transition-colors">{t('nav.restaurants')}</Link>
               <LanguageSelector />
-              <Button variant="outline">Connexion</Button>
-              <Button>S'inscrire</Button>
+              <Link to="/auth">
+                <Button variant="outline">Connexion</Button>
+              </Link>
+              <Link to="/auth">
+                <Button>S'inscrire</Button>
+              </Link>
             </div>
           </div>
         </div>

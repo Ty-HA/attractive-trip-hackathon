@@ -10,11 +10,19 @@ import { Plane, User, Shield, LogOut } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/hooks/useAuth";
+import { useDisplayName } from "@/hooks/useDisplayName";
 import LanguageSelector from "@/components/LanguageSelector";
 
 const Header = () => {
   const { t } = useLanguage();
   const { user, isAdmin, signOut } = useAuth();
+  const displayName = useDisplayName(user);
+
+  // Déconnexion + reload pour forcer le refresh du state
+  const handleLogout = async () => {
+    await signOut();
+    window.location.reload();
+  };
   
   return (
     <nav className="border-b bg-white/95 backdrop-blur-sm sticky top-0 z-50">
@@ -39,7 +47,7 @@ const Header = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" size="sm" className="flex items-center">
                     <User className="h-4 w-4 mr-2" />
-                    {user.email?.split('@')[0]}
+                    {displayName || user.email?.split('@')[0]}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -59,7 +67,7 @@ const Header = () => {
                     </>
                   )}
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={signOut} className="flex items-center">
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center">
                     <LogOut className="h-4 w-4 mr-2" />
                     Se déconnecter
                   </DropdownMenuItem>

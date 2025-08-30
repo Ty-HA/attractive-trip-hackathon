@@ -69,10 +69,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    // Upsert profil après connexion
+    if (data.user && !error) {
+      await supabase
+        .from('profiles')
+        .upsert({
+          user_id: data.user.id,
+          display_name: data.user.user_metadata?.display_name || data.user.email?.split('@')[0] || null,
+          avatar_url: data.user.user_metadata?.avatar_url || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+      // Vérifie et insère le rôle user si besoin
+      const { data: roles, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id);
+      if (!roleError && (!roles || roles.length === 0)) {
+        await supabase.from('user_roles').insert({
+          user_id: data.user.id,
+          role: 'user',
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
     return { error };
   };
 
@@ -90,14 +114,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       },
     });
 
-    // Create profile after successful signup
+    // Upsert profil après inscription
     if (data.user && !error) {
       await supabase
         .from('profiles')
-        .insert({
+        .upsert({
           user_id: data.user.id,
           display_name: displayName || email.split('@')[0],
+          avatar_url: data.user.user_metadata?.avatar_url || null,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' });
+
+      // Vérifie et insère le rôle user si besoin
+      const { data: roles, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id);
+      if (!roleError && (!roles || roles.length === 0)) {
+        await supabase.from('user_roles').insert({
+          user_id: data.user.id,
+          role: 'user',
+          created_at: new Date().toISOString(),
         });
+      }
     }
 
     return { error };

@@ -6,6 +6,8 @@ import { Send, Loader2, MapPin, Calendar } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useDisplayName } from '@/hooks/useDisplayName';
 
 interface Message {
   id: string;
@@ -36,37 +38,112 @@ interface ConversationalAIProps {
 
 const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIProps) => {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const displayName = useDisplayName(user);
+  console.log('ConversationalAI user:', user);
+  console.log('ConversationalAI displayName:', displayName);
+
   const getWelcomeMessage = React.useCallback(() => {
-    const messages = {
-      fr: 'Bonjour ! Je suis votre assistant de voyage personnel. Je peux vous aider à chercher et réserver des destinations, voyages organisés, activités et restaurants. Que puis-je faire pour vous aujourd\'hui ?',
-      en: 'Hello! I am your personal travel assistant. I can help you search and book destinations, organized trips, activities and restaurants. What can I do for you today?'
-    };
-    return messages[language as keyof typeof messages] || messages.fr;
-  }, [language]);
+    if (language === 'fr') {
+      return `Bonjour${displayName ? ' ' + displayName : ''} ! Je suis votre assistant de voyage personnel. Je peux vous aider à chercher et réserver des destinations, voyages organisés, activités et restaurants. Que puis-je faire pour vous aujourd'hui ?`;
+    } else {
+      return `Hello${displayName ? ' ' + displayName : ''}! I am your personal travel assistant. I can help you search and book destinations, organized trips, activities and restaurants. What can I do for you today?`;
+    }
+  }, [language, displayName]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialiser et mettre à jour le message d'accueil
+  // Récupérer l'historique du chat à l'initialisation
   useEffect(() => {
-    setMessages(prev => {
-      const welcomeMessage = {
-        id: '1',
-        text: getWelcomeMessage(),
-        sender: 'ai' as const,
-        timestamp: new Date()
-      };
-      
-      if (prev.length === 0) {
-        // Premier chargement
-        return [welcomeMessage];
-      } else {
-        // Mise à jour de la langue - remplacer le premier message
-        return [welcomeMessage, ...prev.slice(1)];
+    const fetchHistory = async () => {
+      if (!user) {
+        // Pas connecté : juste le message d'accueil
+        setMessages([
+          {
+            id: '1',
+            text: getWelcomeMessage(),
+            sender: 'ai',
+            timestamp: new Date()
+          }
+        ]);
+        return;
       }
-    });
-  }, [getWelcomeMessage]);
+      // Récupère l'historique depuis Supabase
+      const { data, error } = await supabase
+        .from('chat_history')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('id', { ascending: true });
+      if (error || !data) {
+        // En cas d'erreur, fallback message d'accueil
+        setMessages([
+          {
+            id: '1',
+            text: getWelcomeMessage(),
+            sender: 'ai',
+            timestamp: new Date()
+          }
+        ]);
+        return;
+      }
+      // Transforme les messages pour le state local
+      const historyMessages = data.map((msg: any) => ({
+        id: msg.id?.toString() ?? Date.now().toString(),
+        text: msg.message,
+        sender: msg.sender,
+        timestamp: msg.created_at ? new Date(msg.created_at) : new Date(),
+      }));
+
+      // Trie l'historique par date croissante (sécurité)
+      historyMessages.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+      // Regroupe les messages pour garantir l'ordre question puis réponse
+      const grouped: Message[] = [];
+      let i = 0;
+      while (i < historyMessages.length) {
+        if (historyMessages[i].sender === 'ai') {
+          // Message d'accueil ou réponse IA isolée
+          grouped.push(historyMessages[i]);
+          i++;
+        } else if (historyMessages[i].sender === 'user') {
+          // Ajoute la question
+          grouped.push(historyMessages[i]);
+          // Cherche la prochaine réponse IA après la question
+          let j = i + 1;
+          while (j < historyMessages.length && historyMessages[j].sender !== 'ai') {
+            j++;
+          }
+          if (j < historyMessages.length && historyMessages[j].sender === 'ai') {
+            grouped.push(historyMessages[j]);
+            i = j + 1;
+          } else {
+            i++;
+          }
+        } else {
+          i++;
+        }
+      }
+
+      // Ajoute le message d'accueil en haut si le tout premier message n'est pas de l'IA
+      let allMessages = grouped;
+      if (!grouped.length || grouped[0].sender !== 'ai') {
+        allMessages = [
+          {
+            id: '1',
+            text: getWelcomeMessage(),
+            sender: 'ai',
+            timestamp: new Date()
+          },
+          ...grouped
+        ];
+      }
+      setMessages(allMessages);
+    };
+    fetchHistory();
+     
+  }, [user, getWelcomeMessage]);
 
   const handleSearch = async (query: string, type: 'destinations' | 'packages' | 'activities') => {
     try {
@@ -124,6 +201,15 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     setInputMessage('');
     setIsLoading(true);
 
+    // Enregistrer le message utilisateur dans l'historique
+    if (user) {
+      await supabase.from('chat_history').insert({
+        user_id: user.id,
+        sender: 'user',
+        message: messageText,
+      });
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke('travel-concierge', {
         body: {
@@ -142,7 +228,17 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         timestamp: new Date()
       };
 
+
       setMessages(prev => [...prev, aiMessage]);
+
+      // Enregistrer le message IA dans l'historique
+      if (user) {
+        await supabase.from('chat_history').insert({
+          user_id: user.id,
+          sender: 'ai',
+          message: data.response,
+        });
+      }
 
       // Si l'IA suggère une recherche, on peut l'automatiser
       if (data.suggestedActions?.includes('search')) {
@@ -245,7 +341,7 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
                       .replace(/###\s+(.*?)$/gm, '<h3 class="font-bold text-lg mt-3 mb-2">$1</h3>')
                       .replace(/##\s+(.*?)$/gm, '<h2 class="font-bold text-xl mt-4 mb-2">$1</h2>')
                       // Liens cliquables
-                      .replace(/(https?:\/\/[\w\-._~:/?#[\]@!$&'()*+,;=%]+)(?![^<]*>|[^\[]*\])/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">$1</a>')
+                      .replace(/(https?:\/\/[\w\-._~:/?#\[\]@!$&'()*+,;=%]+)(?![^<]*>|[^\[]*\])/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline break-all">$1</a>')
                       // Paragraphes
                       .replace(/\n\n/g, '</p><p class="mt-3">')
                       .replace(/^/, '<p>')
@@ -281,7 +377,7 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
 
         {/* Input field - Sticky at bottom */}
         <div className="sticky bottom-0 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/40 p-5">
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             <Input
               placeholder={
                 language === 'en' 
@@ -301,6 +397,7 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
             >
               <Send className="h-5 w-5" />
             </Button>
+            {/* Le bouton de déconnexion a été retiré du chat. */}
           </div>
         </div>
       </div>
