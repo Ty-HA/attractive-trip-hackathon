@@ -16,6 +16,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This project uses npm with package-lock.json. Bun is also available (bun.lockb exists).
 
+### Development Server Configuration
+
+- Default development server runs on port 8080 (configured in vite.config.ts)
+- Server binds to "::" (IPv6 wildcard) to accept connections from any interface
+
 ## Project Architecture
 
 ### Tech Stack
@@ -121,6 +126,51 @@ The application uses Supabase with the following main tables:
 
 - `components.json` - shadcn/ui configuration
 - `tailwind.config.ts` - Tailwind CSS configuration with custom theme
-- `vite.config.ts` - Vite build configuration with alias support
+- `vite.config.ts` - Vite build configuration with alias support and development tagging
 - `eslint.config.js` - ESLint configuration (TypeScript + React)
 - `tsconfig.json` - TypeScript configuration
+- `postcss.config.js` - PostCSS configuration for Tailwind CSS
+
+## Onboarding System & Trip Management
+
+### Intelligent Onboarding Flow
+
+The app features a comprehensive slot-filling onboarding system that guides users through personalized trip planning:
+
+#### Core Features
+- **Smart slot-filling**: Asks questions one by one to gather preferences (trip_type, companions, duration, budget, origin_city)
+- **Quick replies**: Interactive buttons for common choices (City-break, Beach, Nature, etc.)
+- **Adaptive logic**: Family trips → asks for children ages, low budget + long duration → suggests alternatives
+- **Conversation persistence**: Saves preferences in `user_preferences` table
+- **Personalized recommendations**: Generates 3 options (Good/Better/Best) based on user slots
+
+#### Database Tables
+- **user_preferences**: Stores onboarding slots and completion status
+- **archived_conversations**: Complete trip archives with metadata
+- **chat_history**: Real-time conversation storage
+
+#### Trip Management
+- **Archive System**: Save completed onboarding sessions as trips with auto-generated titles
+- **Reset Function**: Clear current conversation and start fresh onboarding  
+- **Trip History**: View all saved trips with filtering (planned/booked/completed)
+- **Status Tracking**: planned → booking_started → booked → completed
+
+### Key Components
+- **ConversationalAI.tsx**: Main chat interface with onboarding logic and trip management buttons
+- **MesVoyages.tsx**: Trip history page with filtering, favorites, and trip management
+- **Edge Function**: PlannerAgent handles slot-filling, recommendations, and trip archiving
+
+### User Flow
+1. User starts chat → Automatic onboarding with quick replies
+2. AI asks questions sequentially → Fills essential slots  
+3. When complete → Shows 3 personalized recommendations
+4. User can "Save trip" → Archives conversation with metadata
+5. "New trip" button → Resets for fresh onboarding
+6. "My trips" → View complete trip history with actions
+
+## important-instruction-reminders
+
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.

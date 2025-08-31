@@ -20,6 +20,7 @@ import CGV from "./pages/CGV";
 import MentionsLegales from "./pages/MentionsLegales";
 import PolitiqueCookies from "./pages/PolitiqueCookies";
 import NotFound from "./pages/NotFound";
+import MesVoyages from "./pages/MesVoyages";
 import Footer from "./components/Footer";
 import CookieBanner from "./components/CookieBanner";
 import ConversationalAI from "./components/ConversationalAI";
@@ -52,6 +53,7 @@ const App = () => (
                     <Route path="/cgv" element={<CGV />} />
                     <Route path="/mentions-legales" element={<MentionsLegales />} />
                     <Route path="/politique-cookies" element={<PolitiqueCookies />} />
+                    <Route path="/mes-voyages" element={<MesVoyages />} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>

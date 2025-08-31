@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2, MapPin, Calendar } from 'lucide-react';
+import { Send, Loader2, MapPin, Calendar, RotateCcw, Archive, History } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -17,7 +17,18 @@ interface Message {
   data?: 
     | { type: 'search_results'; results: SearchResult[]; category: string }
     | { type: 'booking_started'; item: SearchResult }
+    | { type: 'quick_replies'; question: OnboardingQuestion }
     | undefined;
+}
+
+interface OnboardingQuestion {
+  slot: string;
+  hint: string;
+  quick_replies?: Array<{
+    label: string;
+    value: string | number;
+    description?: string;
+  }>;
 }
 
 
@@ -45,27 +56,53 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
 
   const getWelcomeMessage = React.useCallback(() => {
     if (language === 'fr') {
-      return `Bonjour${displayName ? ' ' + displayName : ''} ! Je suis votre assistant de voyage personnel. Je peux vous aider à chercher et réserver des destinations, voyages organisés, activités et restaurants. Que puis-je faire pour vous aujourd'hui ?`;
+      return `Bonjour${displayName ? ' ' + displayName : ''} ! 🌍✈️\n\nJe suis votre assistant de voyage intelligent. Je vais vous poser quelques questions pour créer le voyage parfait selon vos goûts et votre budget.\n\nCommençons ! Quel type de voyage vous fait rêver ?`;
     } else {
-      return `Hello${displayName ? ' ' + displayName : ''}! I am your personal travel assistant. I can help you search and book destinations, organized trips, activities and restaurants. What can I do for you today?`;
+      return `Hello${displayName ? ' ' + displayName : ''}! 🌍✈️\n\nI'm your intelligent travel assistant. I'll ask you a few questions to create the perfect trip based on your preferences and budget.\n\nLet's start! What type of trip are you dreaming of?`;
     }
   }, [language, displayName]);
+
+  const getOnboardingWelcomeQuestion = React.useCallback((): OnboardingQuestion => {
+    return {
+      slot: 'trip_type',
+      hint: language === 'fr' 
+        ? 'Quel type de voyage vous fait rêver ?'
+        : 'What type of trip are you dreaming of?',
+      quick_replies: [
+        { label: 'City-break', value: 'city-break', description: language === 'fr' ? 'Villes et culture' : 'Cities and culture' },
+        { label: 'Plage', value: 'plage', description: language === 'fr' ? 'Soleil et détente' : 'Sun and relaxation' },
+        { label: 'Nature', value: 'nature', description: language === 'fr' ? 'Parcs et paysages' : 'Parks and landscapes' },
+        { label: 'Aventure', value: 'aventure', description: language === 'fr' ? 'Sensations fortes' : 'Thrills and adventure' },
+        { label: 'Romantique', value: 'romantique', description: language === 'fr' ? 'En amoureux' : 'Romantic getaway' },
+        { label: 'Famille', value: 'famille', description: language === 'fr' ? 'Avec enfants' : 'With children' },
+        { label: 'Luxe', value: 'luxe', description: language === 'fr' ? 'Prestige et confort' : 'Prestige and comfort' },
+        { label: 'Workation', value: 'workation', description: language === 'fr' ? 'Travail et voyage' : 'Work and travel' }
+      ]
+    };
+  }, [language]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [canArchive, setCanArchive] = useState(false); // True when onboarding is complete
+  const [currentConversationData, setCurrentConversationData] = useState<{
+    slots?: Record<string, unknown>;
+    results?: SearchResult[];
+    preferences?: Record<string, unknown>;
+  } | null>(null);
 
   // Récupérer l'historique du chat à l'initialisation
   useEffect(() => {
     const fetchHistory = async () => {
       if (!user) {
-        // Pas connecté : juste le message d'accueil
+        // Pas connecté : message d'accueil avec quick replies pour commencer l'onboarding
         setMessages([
           {
             id: '1',
             text: getWelcomeMessage(),
             sender: 'ai',
-            timestamp: new Date()
+            timestamp: new Date(),
+            data: { type: 'quick_replies', question: getOnboardingWelcomeQuestion() }
           }
         ]);
         return;
@@ -150,7 +187,7 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     };
     fetchHistory();
      
-  }, [user, getWelcomeMessage]);
+  }, [user, getWelcomeMessage, getOnboardingWelcomeQuestion]);
 
   const handleSearch = async (query: string, type: 'destinations' | 'packages' | 'activities') => {
     try {
@@ -193,19 +230,19 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const sendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
+  const sendMessage = async (messageText?: string) => {
+    const textToSend = messageText || inputMessage;
+    if (!textToSend.trim() || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      text: inputMessage,
+      text: textToSend,
       sender: 'user',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    const messageText = inputMessage;
-    setInputMessage('');
+    if (!messageText) setInputMessage(''); // Only clear if not a quick reply
     setIsLoading(true);
 
     // Enregistrer le message utilisateur dans l'historique
@@ -213,16 +250,17 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
       await supabase.from('chat_history').insert({
         user_id: user.id,
         sender: 'user',
-        message: messageText,
+        message: textToSend,
       });
     }
 
     try {
       const { data, error } = await supabase.functions.invoke('travel-concierge', {
         body: {
-          message: messageText,
+          message: textToSend,
           type: 'conversation',
-          language: language
+          language: language,
+          user_id: user?.id
         }
       });
 
@@ -232,9 +270,9 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         id: (Date.now() + 1).toString(),
         text: data.response,
         sender: 'ai',
-        timestamp: new Date()
+        timestamp: new Date(),
+        data: data.next_question ? { type: 'quick_replies', question: data.next_question } : undefined
       };
-
 
       setMessages(prev => [...prev, aiMessage]);
 
@@ -247,21 +285,41 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         });
       }
 
+      // Si l'onboarding est complet, afficher les résultats
+      if (data.is_complete && data.results) {
+        const resultsMessage: Message = {
+          id: (Date.now() + 2).toString(),
+          text: 'Voici vos options personnalisées :',
+          sender: 'ai',
+          timestamp: new Date(),
+          data: { type: 'search_results', results: data.results, category: 'recommendations' }
+        };
+        setMessages(prev => [...prev, resultsMessage]);
+        
+        // Enable archiving and store conversation data
+        setCanArchive(true);
+        setCurrentConversationData({
+          slots: data.slots,
+          results: data.results,
+          preferences: data.slots
+        });
+      }
+
       // Si l'IA suggère une recherche, on peut l'automatiser
-      if (data.suggestedActions?.includes('search')) {
+      if (data.suggestedActions?.includes('search') && !data.is_complete) {
         const searchTerms = ['destination', 'voyage', 'activité'];
         const foundTerm = searchTerms.find(term => 
-          messageText.toLowerCase().includes(term)
+          textToSend.toLowerCase().includes(term)
         );
         
         if (foundTerm) {
           setTimeout(() => {
             if (foundTerm === 'destination') {
-              handleSearch(messageText, 'destinations');
+              handleSearch(textToSend, 'destinations');
             } else if (foundTerm === 'voyage') {
-              handleSearch(messageText, 'packages');
+              handleSearch(textToSend, 'packages');
             } else if (foundTerm === 'activité') {
-              handleSearch(messageText, 'activities');
+              handleSearch(textToSend, 'activities');
             }
           }, 1000);
         }
@@ -321,7 +379,135 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     );
   };
 
+  const renderQuickReplies = (question: OnboardingQuestion) => {
+    if (!question.quick_replies || question.quick_replies.length === 0) {
+      return null;
+    }
 
+    return (
+      <div className="mt-3 space-y-2">
+        <p className="text-xs text-muted-foreground mb-2">
+          {language === 'en' ? 'Quick options:' : 'Choix rapides :'}
+        </p>
+        <div className="grid grid-cols-1 gap-2">
+          {question.quick_replies.map((reply, index) => (
+            <Button
+              key={index}
+              variant="outline"
+              size="sm"
+              onClick={() => sendMessage(reply.label)}
+              className="text-left justify-start h-auto p-3 hover:bg-blue-50"
+            >
+              <div>
+                <div className="font-medium">{reply.label}</div>
+                {reply.description && (
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {reply.description}
+                  </div>
+                )}
+              </div>
+            </Button>
+          ))}
+        </div>
+        <div className="border-t pt-2 mt-3">
+          <p className="text-xs text-muted-foreground">
+            {language === 'en' ? 'Or type your own answer below' : 'Ou tapez votre réponse ci-dessous'}
+          </p>
+        </div>
+      </div>
+    );
+  };
+
+  const resetConversation = async () => {
+    if (!user) return;
+    
+    try {
+      // Clear chat history from database
+      await supabase
+        .from('chat_history')
+        .delete()
+        .eq('user_id', user.id);
+      
+      // Reset local state
+      setMessages([
+        {
+          id: '1',
+          text: getWelcomeMessage(),
+          sender: 'ai',
+          timestamp: new Date(),
+          data: { type: 'quick_replies', question: getOnboardingWelcomeQuestion() }
+        }
+      ]);
+      setCanArchive(false);
+      setCurrentConversationData(null);
+      
+      toast.success(language === 'fr' ? 'Conversation réinitialisée' : 'Conversation reset');
+    } catch (error) {
+      console.error('Error resetting conversation:', error);
+      toast.error(language === 'fr' ? 'Erreur lors de la réinitialisation' : 'Reset failed');
+    }
+  };
+
+  const archiveConversation = async () => {
+    if (!user || !canArchive || !currentConversationData) return;
+    
+    try {
+      const preferences = currentConversationData.slots || {};
+      const results = currentConversationData.results || [];
+      
+      // Generate automatic title
+      const tripType = preferences.trip_type as string || 'voyage';
+      const destinations = results.length > 0 ? results[0].title : '';
+      const dates = preferences.dates as { from?: string } || {};
+      
+      let title = `${tripType.charAt(0).toUpperCase() + tripType.slice(1)}`;
+      if (destinations) title += ` - ${destinations}`;
+      if (dates.from) {
+        const date = new Date(dates.from);
+        const monthYear = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+        title += ` - ${monthYear}`;
+      }
+      
+      // Archive the conversation  
+      const archiveData = {
+        user_id: user.id,
+        title,
+        trip_type: preferences.trip_type as string || null,
+        destination_summary: results.map(r => r.title).join(', ') || null,
+        total_budget: preferences.budget_total as number || null,
+        duration_days: preferences.duration_days as number || null,
+        trip_dates: preferences.dates || null,
+        preferences: JSON.stringify(preferences),
+        messages: JSON.stringify(messages),
+        final_recommendations: JSON.stringify(results),
+        booking_status: 'planned' as const,
+        tags: [
+          preferences.trip_type as string,
+          ...(preferences.interests as string[] || [])
+        ].filter(Boolean)
+      };
+
+      const { error } = await supabase
+        .from('archived_conversations')
+        .insert(archiveData);
+      
+      if (error) throw error;
+      
+      toast.success(language === 'fr' ? `Voyage "${title}" archivé avec succès` : `Trip "${title}" archived successfully`);
+      
+      // Reset for new conversation
+      resetConversation();
+      
+    } catch (error) {
+      console.error('Error archiving conversation:', error);
+      toast.error(language === 'fr' ? 'Erreur lors de l\'archivage' : 'Archive failed');
+    }
+  };
+
+  const viewTripHistory = () => {
+    // Navigate to trip history page
+    window.location.href = '/mes-voyages';
+  };
 
   // Mode inline : chat intégré dans la section hero
   if (inline) {
@@ -358,6 +544,9 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
                 {message.data?.type === 'search_results' && message.data.results?.length > 0 && (
                   renderSearchResults(message.data.results)
                 )}
+                {message.data?.type === 'quick_replies' && (
+                  renderQuickReplies(message.data.question)
+                )}
                 <p className={`text-xs mt-3 ${
                   message.sender === 'user' ? 'text-blue-100' : 'text-gray-500'
                 }`}>
@@ -382,6 +571,43 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
           )}
         </div>
 
+        {/* Action Buttons - Show when user is logged in */}
+        {user && (
+          <div className="flex gap-2 justify-center mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={viewTripHistory}
+              className="flex items-center gap-2 bg-white/90 border border-gray-200 hover:bg-gray-50"
+            >
+              <History className="h-4 w-4" />
+              {language === 'fr' ? 'Mes voyages' : 'My trips'}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetConversation}
+              className="flex items-center gap-2 bg-white/90 border border-gray-200 hover:bg-gray-50"
+            >
+              <RotateCcw className="h-4 w-4" />
+              {language === 'fr' ? 'Nouveau voyage' : 'New trip'}
+            </Button>
+            
+            {canArchive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={archiveConversation}
+                className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 hover:bg-green-100"
+              >
+                <Archive className="h-4 w-4" />
+                {language === 'fr' ? 'Sauvegarder' : 'Save trip'}
+              </Button>
+            )}
+          </div>
+        )}
+
         {/* Input field - Sticky at bottom */}
         <div className="sticky bottom-0 bg-white/90 backdrop-blur-md rounded-3xl shadow-2xl border border-white/40 p-5">
           <div className="flex gap-4 items-center">
@@ -398,13 +624,12 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
               className="flex-1 text-gray-900 placeholder:text-gray-500 border-gray-200 rounded-2xl h-12 text-base bg-white/80 border-2 focus:border-blue-400 focus:bg-white transition-all"
             />
             <Button 
-              onClick={sendMessage} 
+              onClick={() => sendMessage()} 
               disabled={!inputMessage.trim() || isLoading}
               className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 rounded-2xl px-6 h-12 shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:transform-none"
             >
               <Send className="h-5 w-5" />
             </Button>
-            {/* Le bouton de déconnexion a été retiré du chat. */}
           </div>
         </div>
       </div>

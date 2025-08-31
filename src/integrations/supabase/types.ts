@@ -512,6 +512,132 @@ export type Database = {
           },
         ]
       }
+      archived_conversations: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          trip_type: string | null
+          destination_summary: string | null
+          total_budget: number | null
+          duration_days: number | null
+          trip_dates: Json | null
+          preferences: Json
+          messages: Json
+          final_recommendations: Json | null
+          selected_option: Json | null
+          booking_status: string | null
+          created_at: string
+          completed_at: string | null
+          last_accessed_at: string | null
+          tags: string[] | null
+          is_favorite: boolean | null
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          trip_type?: string | null
+          destination_summary?: string | null
+          total_budget?: number | null
+          duration_days?: number | null
+          trip_dates?: Json | null
+          preferences: Json
+          messages: Json
+          final_recommendations?: Json | null
+          selected_option?: Json | null
+          booking_status?: string | null
+          created_at?: string
+          completed_at?: string | null
+          last_accessed_at?: string | null
+          tags?: string[] | null
+          is_favorite?: boolean | null
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          trip_type?: string | null
+          destination_summary?: string | null
+          total_budget?: number | null
+          duration_days?: number | null
+          trip_dates?: Json | null
+          preferences?: Json
+          messages?: Json
+          final_recommendations?: Json | null
+          selected_option?: Json | null
+          booking_status?: string | null
+          created_at?: string
+          completed_at?: string | null
+          last_accessed_at?: string | null
+          tags?: string[] | null
+          is_favorite?: boolean | null
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      user_preferences: {
+        Row: {
+          id: string
+          user_id: string
+          trip_type: string | null
+          dates: Json | null
+          duration_days: number | null
+          budget_total: number | null
+          origin_city: string | null
+          companions: Json | null
+          interests: string[] | null
+          constraints: Json | null
+          hotel_prefs: Json | null
+          is_complete: boolean | null
+          completed_at: string | null
+          conversation_count: number | null
+          last_completed_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          trip_type?: string | null
+          dates?: Json | null
+          duration_days?: number | null
+          budget_total?: number | null
+          origin_city?: string | null
+          companions?: Json | null
+          interests?: string[] | null
+          constraints?: Json | null
+          hotel_prefs?: Json | null
+          is_complete?: boolean | null
+          completed_at?: string | null
+          conversation_count?: number | null
+          last_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          trip_type?: string | null
+          dates?: Json | null
+          duration_days?: number | null
+          budget_total?: number | null
+          origin_city?: string | null
+          companions?: Json | null
+          interests?: string[] | null
+          constraints?: Json | null
+          hotel_prefs?: Json | null
+          is_complete?: boolean | null
+          completed_at?: string | null
+          conversation_count?: number | null
+          last_completed_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
