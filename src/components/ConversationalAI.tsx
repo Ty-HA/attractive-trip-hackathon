@@ -1354,6 +1354,31 @@ MESSAGE UTILISATEUR: ${textToSend}`;
                 </div>
               </div>
 
+              {/* Login prompt for chat history - Only show when not logged in */}
+              {!user && (
+                <div className="mb-4 p-3 bg-blue-50/80 border border-blue-200/50 rounded-lg">
+                  <div className="text-xs text-blue-700 text-center">
+                    <div className="font-semibold flex items-center justify-center gap-1">
+                      💾 {language === 'fr' ? 'SAUVEGARDER VOS CONVERSATIONS' : 'SAVE YOUR CONVERSATIONS'}
+                    </div>
+                    <div className="mt-1 text-blue-600">
+                      {language === 'fr' 
+                        ? 'Connectez-vous pour conserver l\'historique de vos chats et retrouver vos projets de voyage.'
+                        : 'Log in to keep your chat history and find your travel projects later.'
+                      }
+                    </div>
+                    <div className="mt-2">
+                      <a 
+                        href="/auth" 
+                        className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 hover:text-blue-800 underline"
+                      >
+                        🔗 {language === 'fr' ? 'Se connecter maintenant' : 'Log in now'}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Voice Chat Toggle Button */}
               <div className="mb-6 text-center">
                 <Button
