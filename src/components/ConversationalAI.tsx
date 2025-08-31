@@ -1361,6 +1361,43 @@ MESSAGE UTILISATEUR: ${textToSend}`;
                     </>
                   )}
                 </Button>
+
+                {/* Voice Guide - Always visible */}
+                <div className="mt-3 px-4 py-3 bg-blue-50/80 rounded-xl border border-blue-200/50">
+                  <div className="text-xs text-blue-700">
+                    <div className="font-semibold mb-1">
+                      {language === 'fr' ? '🎤 Comment utiliser le mode vocal :' : '🎤 How to use voice mode:'}
+                    </div>
+                    <div className="space-y-1 text-blue-600">
+                      <div>
+                        {language === 'fr' ? '1. Cliquez sur le bouton ci-dessus pour activer' : '1. Click the button above to activate'}
+                      </div>
+                      <div>
+                        {language === 'fr' ? '2. Puis cliquez sur "Parler maintenant"' : '2. Then click "Speak now"'}
+                      </div>
+                      <div className="italic">
+                        {language === 'fr' 
+                          ? '3. Exemple : "Je veux aller à Paris, budget de 1000 euros, du 15 au 20 mai, pour 2 personnes"'
+                          : '3. Example: "I want to go to Paris, budget 1000 euros, from May 15 to 20, for 2 people"'
+                        }
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-blue-200/50 text-blue-700 font-medium space-y-1">
+                        <div>
+                          ✨ {language === 'fr' 
+                            ? 'Le formulaire se remplira automatiquement selon vos paroles !'
+                            : 'The form will auto-fill based on what you say!'
+                          }
+                        </div>
+                        <div className="text-xs">
+                          🎙️ {language === 'fr' 
+                            ? 'Mode ON = L\'IA vous répond aussi à l\'oral | Mode OFF = Vous parlez, l\'IA répond par texte'
+                            : 'ON mode = AI speaks back | OFF mode = You speak, AI responds in text'
+                          }
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 
                 {isVoiceChatEnabled && (
                   <div className="mt-3">
