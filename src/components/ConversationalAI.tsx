@@ -186,18 +186,22 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
   }, [generateMessageHash]);
 
   // sendMessage function - defined before processTranscript to avoid initialization issues
-  const sendMessage = useCallback(async (messageText?: string) => {
+  const sendMessage = useCallback(async (messageText?: string, skipUserMessage = false) => {
     const textToSend = messageText || inputMessage;
     if (!textToSend.trim() || isLoading) return;
 
-    const userMessage: Message = {
-      id: generateUniqueId(),
-      text: textToSend,
-      sender: 'user',
-      timestamp: new Date()
-    };
+    // Add user message to chat only if not skipped (for voice processing)
+    if (!skipUserMessage) {
+      const userMessage: Message = {
+        id: generateUniqueId(),
+        text: textToSend,
+        sender: 'user',
+        timestamp: new Date()
+      };
 
-    setMessages(prev => [...prev, userMessage]);
+      setMessages(prev => [...prev, userMessage]);
+    }
+    
     if (!messageText) setInputMessage(''); // Only clear if not a quick reply
     setIsLoading(true);
 
@@ -396,9 +400,18 @@ MESSAGE UTILISATEUR: ${textToSend}`;
       console.log('📅 Updated date to:', extractedData.dates.to);
     }
     
-    // Send message to AI if form data was extracted successfully or if voice chat is enabled
+    // Add user message to chat first, then send to AI
+    const userMessage: Message = {
+      id: generateUniqueId(),
+      text: transcript,
+      sender: 'user',
+      timestamp: new Date()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    
+    // Send to AI without adding user message again (skipUserMessage = true)
     console.log('📤 Auto-sending transcript to AI after form extraction:', transcript);
-    sendMessage(transcript);
+    sendMessage(transcript, true);
   }, [quickDestination, sendMessage]);
 
   // Text-to-speech function

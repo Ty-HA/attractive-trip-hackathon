@@ -177,7 +177,27 @@ Travel planning is the perfect example of search complexity - users need to aggr
 
 ## 🚀 Next Steps
 
+### 🤝 Sponsor API Integrations
+**Priority integrations planned with hackathon sponsors:**
+
+#### 🏨 SerpAPI - Google Hotels Integration
+- **API**: [SerpAPI Google Hotels API](https://serpapi.com/google-hotels-api)
+- **Endpoint**: `/search?engine=google_hotels`
+- **Status**: ⏳ *Not implemented due to time constraints during hackathon*
+- **Purpose**: Real-time hotel search, pricing, and availability data
+- **Implementation**: Direct integration with our travel concierge AI for instant hotel recommendations
+
+#### 🚗 ConduitAI - Autonomous Travel Intelligence
+- **Platform**: [ConduitAI](https://conduitai.com)
+- **Status**: ⏳ *Planned integration - time constraints during hackathon*
+- **Purpose**: Advanced AI routing and travel optimization
+- **Use Case**: Intelligent itinerary planning and multi-modal transportation recommendations
+
+*These sponsor integrations will significantly enhance our search intelligence capabilities and provide users with comprehensive, real-time travel data.*
+
 ### Immediate Roadmap
+- [ ] **SerpAPI Integration**: Google Hotels real-time search and pricing
+- [ ] **ConduitAI Integration**: Advanced routing and travel intelligence
 - [ ] **Real-time Booking**: Direct reservations through partner APIs
 - [ ] **Advanced RAG**: Populate knowledge base with curated travel content
 - [ ] **Multi-agent Orchestration**: Specialized agents for flights, hotels, activities
@@ -193,9 +213,16 @@ Travel planning is the perfect example of search complexity - users need to aggr
 
 ## 📞 Contact & Demo
 
-**Live Demo**: [Coming Soon - Deployment in progress]  
-**Repository**: [https://github.com/Ty-HA/attractive-trip-hackathon](https://github.com/Ty-HA/attractive-trip-hackathon)  
+**🚀 Live Demo**: [https://attractive-trip-hackathon.vercel.app/](https://attractive-trip-hackathon.vercel.app/)  
+**📂 Repository**: [https://github.com/Ty-HA/attractive-trip-hackathon](https://github.com/Ty-HA/attractive-trip-hackathon)  
 **Team**: Built with passion for transforming travel through AI
+
+### 🎯 Quick Demo Steps:
+1. **Visit**: [attractive-trip-hackathon.vercel.app](https://attractive-trip-hackathon.vercel.app/)
+2. **Activate Voice**: Click "IA VOCAL CHAT OFF" to enable voice mode
+3. **Speak**: "Je veux partir à Nice du 10 au 15 septembre pour 3 personnes avec un budget de 1500€"
+4. **Watch**: Form auto-fills and AI provides personalized recommendations
+5. **Experience**: Full conversational travel planning in action
 
 ---
 
