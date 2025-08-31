@@ -420,64 +420,90 @@ serve(async (req: Request) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    // ---- ONBOARDING SLOT-FILLING SYSTEM ----
-    if (type === 'conversation' && user_id) {
-      console.log("Processing onboarding for user:", user_id);
-      
-      // Load existing preferences
-      let currentSlots = await loadUserPreferences(supabase, user_id) || {};
-      console.log("Current slots:", currentSlots);
-      
-      // Parse user response and update slots
-      const nextQuestion = findNextMissingSlot(currentSlots);
-      if (nextQuestion && message) {
-        const parsedValue = parseUserResponse(message, nextQuestion);
-        if (parsedValue !== null) {
-          currentSlots[nextQuestion.slot] = parsedValue;
-          await saveUserPreferences(supabase, user_id, currentSlots);
-          console.log("Updated slot", nextQuestion.slot, "with:", parsedValue);
+    // ---- CONVERSATIONAL SYSTEM WITH CONTEXT ----
+    let currentSlots = {};
+    let conversationContext = "";
+    
+    if (type === 'conversation') {
+      // Load existing preferences and conversation history if user is logged in
+      if (user_id) {
+        console.log("Processing conversation for user:", user_id);
+        currentSlots = await loadUserPreferences(supabase, user_id) || {};
+        
+        // Get recent conversation history for context
+        const { data: recentMessages } = await supabase
+          .from('chat_history')
+          .select('message, sender')
+          .eq('user_id', user_id)
+          .order('id', { ascending: false })
+          .limit(10);
+        
+        if (recentMessages && recentMessages.length > 0) {
+          conversationContext = recentMessages
+            .reverse()
+            .map(msg => `${msg.sender === 'user' ? 'Utilisateur' : 'Assistant'}: ${msg.message}`)
+            .join('\n');
+        }
+        
+        // ONBOARDING SLOT-FILLING (if not complete and user wants structured onboarding)
+        if (!isOnboardingComplete(currentSlots) && message?.toLowerCase().includes('questionnaire')) {
+          console.log("Current slots:", currentSlots);
+          
+          // Parse user response and update slots
+          const nextQuestion = findNextMissingSlot(currentSlots);
+          if (nextQuestion && message) {
+            const parsedValue = parseUserResponse(message, nextQuestion);
+            if (parsedValue !== null) {
+              currentSlots[nextQuestion.slot] = parsedValue;
+              await saveUserPreferences(supabase, user_id, currentSlots);
+              console.log("Updated slot", nextQuestion.slot, "with:", parsedValue);
+            }
+          }
+          
+          // Check if onboarding is now complete
+          if (isOnboardingComplete(currentSlots)) {
+            console.log("Onboarding complete! Triggering search...");
+            
+            // Generate personalized recommendations
+            const searchResults = await generateRecommendations(supabase, currentSlots);
+            
+            return new Response(
+              JSON.stringify({
+                response: `Parfait ! Voici 3 options qui correspondent exactement à vos critères :`,
+                type: "conversation",
+                suggestedActions: ["search"],
+                slots: currentSlots,
+                results: searchResults,
+                is_complete: true
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+          
+          // Find next question to ask
+          const nextMissingSlot = findNextMissingSlot(currentSlots);
+          if (nextMissingSlot) {
+            const quickReplies = QUICK_REPLIES[nextMissingSlot.slot as keyof typeof QUICK_REPLIES] || [];
+            
+            return new Response(
+              JSON.stringify({
+                response: nextMissingSlot.hint,
+                type: "conversation",
+                next_question: {
+                  slot: nextMissingSlot.slot,
+                  hint: nextMissingSlot.hint,
+                  quick_replies: quickReplies
+                },
+                slots: currentSlots
+              }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
         }
       }
       
-      // Check if onboarding is complete
-      if (isOnboardingComplete(currentSlots)) {
-        console.log("Onboarding complete! Triggering search...");
-        
-        // Generate personalized recommendations
-        const searchResults = await generateRecommendations(supabase, currentSlots);
-        
-        return new Response(
-          JSON.stringify({
-            response: `Parfait ! Voici 3 options qui correspondent exactement à vos critères :`,
-            type: "conversation",
-            suggestedActions: ["search"],
-            slots: currentSlots,
-            results: searchResults,
-            is_complete: true
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      
-      // Find next question to ask
-      const nextMissingSlot = findNextMissingSlot(currentSlots);
-      if (nextMissingSlot) {
-        const quickReplies = QUICK_REPLIES[nextMissingSlot.slot as keyof typeof QUICK_REPLIES] || [];
-        
-        return new Response(
-          JSON.stringify({
-            response: nextMissingSlot.hint,
-            type: "conversation",
-            next_question: {
-              slot: nextMissingSlot.slot,
-              hint: nextMissingSlot.hint,
-              quick_replies: quickReplies
-            },
-            slots: currentSlots
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+      // CONTEXTUAL CONVERSATION (free form or onboarding complete)
+      // Continue with Perplexity but with enhanced context
     }
 
     // ---- Actions "search_*" & details ----
@@ -579,49 +605,94 @@ serve(async (req: Request) => {
     const systemPrompts = {
       fr: `Tu es un assistant de voyage conversationnel expert qui aide à créer des voyages sur mesure. Tu dois:
 
-1. PLANIFICATION COMPLÈTE:
-- Comprendre les préférences du voyageur (budget, dates, style de voyage, intérêts)
-- Proposer un itinéraire détaillé jour par jour
-- Suggérer hébergements, activités, restaurants, transports
-- Donner des conseils pratiques (météo, culture, sécurité)
+1. CONVERSATION LIBRE ET NATURELLE:
+- Comprends les demandes spontanées (ex: "Je veux voir des dauphins à Bali")
+- MAINTIENS le contexte de la conversation précédente
+- Si l'utilisateur mentionne une destination spécifique, RESTE sur ce sujet
+- Ne change PAS de destination ou contexte sans demande explicite
+- Réponds de façon conversationnelle et engageante
 
-2. CONVERSATION NATURELLE:
-- Poser des questions de suivi pour personnaliser le voyage
-- Être proactif dans les suggestions
-- Maintenir un ton amical et professionnel
-- Guider vers une réservation complète
+2. APPROCHE PROGRESSIVE ET STRUCTURÉE:
+- TOUJOURS commencer par confirmer la demande et poser les questions essentielles :
+  • Budget total ou fourchette de prix
+  • Durée du séjour (combien de jours/nuits)
+  • Dates de voyage (précises ou période souhaitée)
+  • Nombre de personnes (couple, famille, groupe...)
+- NE PAS donner de suggestions détaillées AVANT d'avoir ces informations
+- Une fois ces infos obtenues, ALORS proposer des suggestions adaptées
 
-3. FORMAT DE RÉPONSE:
-- Utilise des sections claires avec des titres
-- Inclus des détails pratiques (prix, durées, horaires)
-- Propose toujours des alternatives
-- Termine par une question pour continuer la conversation
+3. PLANIFICATION CONTEXTUELLE:
+- Extrais et mémorise les préférences exprimées (destination, activités, style)
+- Adapte toutes les suggestions au budget et à la durée mentionnés
+- Propose hébergements, activités, restaurants dans la fourchette de prix
+- Donne des conseils pratiques adaptés au budget et à la saison
 
-IMPORTANT: Réponds TOUJOURS et UNIQUEMENT en français.`,
+4. FORMAT DE RÉPONSE ENGAGEANT:
+- Confirme d'abord l'intérêt pour la destination/activité mentionnée
+- Pose les questions essentielles une par une (pas toutes d'un coup)
+- Utilise un ton enthousiaste et personnalisé
+- Une fois toutes les infos obtenues, propose des suggestions détaillées
+
+EXEMPLE DE RÉPONSE CORRECTE:
+User: "Week-end romantique à Paris"
+Assistant: "Excellente idée ! Paris est parfait pour un week-end romantique 😍
+Pour vous proposer les meilleures options, j'aurais besoin de quelques détails :
+• Quel est votre budget approximatif pour ce week-end (hébergement + activités + repas) ?
+• À quelle période souhaitez-vous partir ?
+• Vous êtes combien de personnes ?"
+
+IMPORTANT: Réponds TOUJOURS et UNIQUEMENT en français. POSE D'ABORD LES QUESTIONS ESSENTIELLES avant de détailler.`,
       en: `You are a conversational travel expert assistant that helps create personalized trips. You must:
 
-1. COMPLETE PLANNING:
-- Understand traveler preferences (budget, dates, travel style, interests)
-- Propose detailed day-by-day itineraries
-- Suggest accommodations, activities, restaurants, transportation
-- Provide practical advice (weather, culture, safety)
+1. FREE AND NATURAL CONVERSATION:
+- Understand spontaneous requests (ex: "I want to see dolphins in Bali")
+- MAINTAIN the context from previous conversation
+- If user mentions a specific destination, STAY on this topic
+- Do NOT change destination or context unless explicitly requested
+- Respond conversationally and engagingly
 
-2. NATURAL CONVERSATION:
-- Ask follow-up questions to personalize the trip
-- Be proactive with suggestions
-- Maintain a friendly and professional tone
-- Guide towards complete booking
+2. PROGRESSIVE AND STRUCTURED APPROACH:
+- ALWAYS start by confirming the request and asking essential questions:
+  • Total budget or price range
+  • Trip duration (how many days/nights)
+  • Travel dates (specific or preferred period)
+  • Number of people (couple, family, group...)
+- DO NOT provide detailed suggestions BEFORE getting this information
+- Once you have these details, THEN provide tailored suggestions
 
-3. RESPONSE FORMAT:
-- Use clear sections with titles
-- Include practical details (prices, durations, schedules)
-- Always offer alternatives
-- End with a question to continue the conversation
+3. CONTEXTUAL PLANNING:
+- Extract and remember expressed preferences (destination, activities, style)
+- Adapt all suggestions to the mentioned budget and duration
+- Propose accommodations, activities, restaurants within the price range
+- Provide practical advice adapted to budget and season
 
-IMPORTANT: Always respond ONLY in English. Never use French or any other language.`
+4. ENGAGING RESPONSE FORMAT:
+- First confirm enthusiasm for the mentioned destination/activity
+- Ask essential questions one by one (not all at once)
+- Use enthusiastic and personalized tone
+- Once all info is obtained, provide detailed suggestions
+
+EXAMPLE OF CORRECT RESPONSE:
+User: "Romantic weekend in Paris"
+Assistant: "Excellent choice! Paris is perfect for a romantic weekend 😍
+To suggest the best options for you, I need a few details:
+• What's your approximate budget for this weekend (accommodation + activities + meals)?
+• When are you planning to travel?
+• How many people will be traveling?"
+
+IMPORTANT: Always respond ONLY in English. ASK ESSENTIAL QUESTIONS FIRST before providing details.`
     };
 
-    const systemPrompt = systemPrompts[language as keyof typeof systemPrompts] || systemPrompts.fr;
+    const baseSystemPrompt = systemPrompts[language as keyof typeof systemPrompts] || systemPrompts.fr;
+    
+    // Enhance system prompt with user context (moved outside the if block)
+    let contextualSystemPrompt = baseSystemPrompt;
+    if (typeof conversationContext !== 'undefined' && conversationContext) {
+      contextualSystemPrompt += `\n\nCONTEXTE DE LA CONVERSATION PRÉCÉDENTE:\n${conversationContext}\n\nIMPORTANT: Continue cette conversation en gardant le même contexte et la même destination/thématique.`;
+    }
+    if (user_id && typeof currentSlots !== 'undefined' && Object.keys(currentSlots).length > 0) {
+      contextualSystemPrompt += `\n\nPRÉFÉRENCES UTILISATEUR:\n${JSON.stringify(currentSlots, null, 2)}\n\nUtilise ces préférences pour personnaliser tes réponses.`;
+    }
 
     // Petit contexte (non bloquant)
     let contextInfo = "";
@@ -640,8 +711,9 @@ IMPORTANT: Always respond ONLY in English. Never use French or any other languag
     }
 
     console.log(`Perplexity call model=${PERPLEXITY_MODEL}`);
+    console.log("Using contextual system prompt with conversation history");
     
-    const text = await callPerplexityAPI(systemPrompt + contextInfo, message ?? "");
+    const text = await callPerplexityAPI(contextualSystemPrompt + contextInfo, message ?? "");
     
     return new Response(
       JSON.stringify({ 

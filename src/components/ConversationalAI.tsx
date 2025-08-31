@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Send, Loader2, MapPin, Calendar, RotateCcw, Archive, History } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Send, Loader2, MapPin, Calendar as CalendarIcon, RotateCcw, Archive, History, Users, Euro } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useDisplayName } from '@/hooks/useDisplayName';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface Message {
   id: string;
@@ -56,30 +62,11 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
 
   const getWelcomeMessage = React.useCallback(() => {
     if (language === 'fr') {
-      return `Bonjour${displayName ? ' ' + displayName : ''} ! 🌍✈️\n\nJe suis votre assistant de voyage intelligent. Je vais vous poser quelques questions pour créer le voyage parfait selon vos goûts et votre budget.\n\nCommençons ! Quel type de voyage vous fait rêver ?`;
+      return `Bonjour${displayName ? ' ' + displayName : ''} ! 🌍✈️\n\nJe suis votre assistant de voyage intelligent. Je vais vous aider à planifier le voyage parfait adapté à vos envies et votre budget.\n\nUtilisez le formulaire ci-dessous pour me donner vos préférences, ou écrivez-moi directement votre projet de voyage !`;
     } else {
-      return `Hello${displayName ? ' ' + displayName : ''}! 🌍✈️\n\nI'm your intelligent travel assistant. I'll ask you a few questions to create the perfect trip based on your preferences and budget.\n\nLet's start! What type of trip are you dreaming of?`;
+      return `Hello${displayName ? ' ' + displayName : ''}! 🌍✈️\n\nI'm your intelligent travel assistant. I'll help you plan the perfect trip tailored to your desires and budget.\n\nUse the form below to share your preferences, or write to me directly about your travel project!`;
     }
   }, [language, displayName]);
-
-  const getOnboardingWelcomeQuestion = React.useCallback((): OnboardingQuestion => {
-    return {
-      slot: 'trip_type',
-      hint: language === 'fr' 
-        ? 'Quel type de voyage vous fait rêver ?'
-        : 'What type of trip are you dreaming of?',
-      quick_replies: [
-        { label: 'City-break', value: 'city-break', description: language === 'fr' ? 'Villes et culture' : 'Cities and culture' },
-        { label: 'Plage', value: 'plage', description: language === 'fr' ? 'Soleil et détente' : 'Sun and relaxation' },
-        { label: 'Nature', value: 'nature', description: language === 'fr' ? 'Parcs et paysages' : 'Parks and landscapes' },
-        { label: 'Aventure', value: 'aventure', description: language === 'fr' ? 'Sensations fortes' : 'Thrills and adventure' },
-        { label: 'Romantique', value: 'romantique', description: language === 'fr' ? 'En amoureux' : 'Romantic getaway' },
-        { label: 'Famille', value: 'famille', description: language === 'fr' ? 'Avec enfants' : 'With children' },
-        { label: 'Luxe', value: 'luxe', description: language === 'fr' ? 'Prestige et confort' : 'Prestige and comfort' },
-        { label: 'Workation', value: 'workation', description: language === 'fr' ? 'Travail et voyage' : 'Work and travel' }
-      ]
-    };
-  }, [language]);
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
@@ -90,21 +77,21 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     results?: SearchResult[];
     preferences?: Record<string, unknown>;
   } | null>(null);
+  
+  // Quick onboarding states  
+  const [showQuickInputs, setShowQuickInputs] = useState(true);
+  const [quickDestination, setQuickDestination] = useState('');
+  const [quickBudget, setQuickBudget] = useState(2000);
+  const [quickPeople, setQuickPeople] = useState('2');
+  const [quickDateFrom, setQuickDateFrom] = useState<Date | undefined>(undefined);
+  const [quickDateTo, setQuickDateTo] = useState<Date | undefined>(undefined);
 
   // Récupérer l'historique du chat à l'initialisation
   useEffect(() => {
     const fetchHistory = async () => {
       if (!user) {
-        // Pas connecté : message d'accueil avec quick replies pour commencer l'onboarding
-        setMessages([
-          {
-            id: '1',
-            text: getWelcomeMessage(),
-            sender: 'ai',
-            timestamp: new Date(),
-            data: { type: 'quick_replies', question: getOnboardingWelcomeQuestion() }
-          }
-        ]);
+        // Pas connecté : pas de messages initiaux
+        setMessages([]);
         return;
       }
       // Récupère l'historique depuis Supabase
@@ -114,15 +101,8 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         .eq('user_id', user.id)
         .order('id', { ascending: true });
       if (error || !data) {
-        // En cas d'erreur, fallback message d'accueil
-        setMessages([
-          {
-            id: '1',
-            text: getWelcomeMessage(),
-            sender: 'ai',
-            timestamp: new Date()
-          }
-        ]);
+        // En cas d'erreur, pas de messages
+        setMessages([]);
         return;
       }
       // Définir une interface pour les lignes d'historique du chat
@@ -170,24 +150,17 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         }
       }
 
-      // Ajoute le message d'accueil en haut si le tout premier message n'est pas de l'IA
-      let allMessages = grouped;
-      if (!grouped.length || grouped[0].sender !== 'ai') {
-        allMessages = [
-          {
-            id: '1',
-            text: getWelcomeMessage(),
-            sender: 'ai',
-            timestamp: new Date()
-          },
-          ...grouped
-        ];
+      // Utilise directement l'historique groupé
+      setMessages(grouped);
+      
+      // Hide quick inputs if there's conversation history
+      if (grouped.length > 0) {
+        setShowQuickInputs(false);
       }
-      setMessages(allMessages);
     };
     fetchHistory();
      
-  }, [user, getWelcomeMessage, getOnboardingWelcomeQuestion]);
+  }, [user, getWelcomeMessage]);
 
   const handleSearch = async (query: string, type: 'destinations' | 'packages' | 'activities') => {
     try {
@@ -429,17 +402,13 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
         .eq('user_id', user.id);
       
       // Reset local state
-      setMessages([
-        {
-          id: '1',
-          text: getWelcomeMessage(),
-          sender: 'ai',
-          timestamp: new Date(),
-          data: { type: 'quick_replies', question: getOnboardingWelcomeQuestion() }
-        }
-      ]);
+      setMessages([]);
       setCanArchive(false);
       setCurrentConversationData(null);
+      
+      // Show quick inputs again
+      setShowQuickInputs(true);
+      resetQuickInputs();
       
       toast.success(language === 'fr' ? 'Conversation réinitialisée' : 'Conversation reset');
     } catch (error) {
@@ -449,24 +418,41 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
   };
 
   const archiveConversation = async () => {
-    if (!user || !canArchive || !currentConversationData) return;
+    if (!user) return;
+    
+    // Si pas de messages, ne rien archiver
+    if (messages.length === 0) {
+      toast.error(language === 'fr' ? 'Aucune conversation à archiver' : 'No conversation to archive');
+      return;
+    }
     
     try {
-      const preferences = currentConversationData.slots || {};
-      const results = currentConversationData.results || [];
+      const preferences = currentConversationData?.slots || {};
+      const results = currentConversationData?.results || [];
       
-      // Generate automatic title
-      const tripType = preferences.trip_type as string || 'voyage';
-      const destinations = results.length > 0 ? results[0].title : '';
-      const dates = preferences.dates as { from?: string } || {};
+      // Generate automatic title from conversation
+      let title = language === 'fr' ? 'Conversation voyage' : 'Travel conversation';
       
-      let title = `${tripType.charAt(0).toUpperCase() + tripType.slice(1)}`;
-      if (destinations) title += ` - ${destinations}`;
-      if (dates.from) {
-        const date = new Date(dates.from);
-        const monthYear = date.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-        title += ` - ${monthYear}`;
+      // Try to extract destination from first user message
+      if (messages.length > 0) {
+        const firstUserMessage = messages.find(m => m.sender === 'user');
+        if (firstUserMessage) {
+          const text = firstUserMessage.text.toLowerCase();
+          // Extract potential destination names (simple heuristic)
+          const words = text.split(' ');
+          const capitalizedWords = words.filter(word => 
+            word.length > 3 && /^[A-Z]/.test(firstUserMessage.text.split(' ')[words.indexOf(word)])
+          );
+          if (capitalizedWords.length > 0) {
+            title = `${language === 'fr' ? 'Voyage' : 'Trip'} ${capitalizedWords[0]}`;
+          }
+        }
       }
+      
+      // Add current date
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+      title += ` - ${dateStr}`;
       
       // Archive the conversation  
       const archiveData = {
@@ -496,7 +482,7 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
       toast.success(language === 'fr' ? `Voyage "${title}" archivé avec succès` : `Trip "${title}" archived successfully`);
       
       // Reset for new conversation
-      resetConversation();
+      await resetConversation();
       
     } catch (error) {
       console.error('Error archiving conversation:', error);
@@ -509,10 +495,183 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     window.location.href = '/mes-voyages';
   };
 
+  // Quick onboarding handlers
+  const handleQuickSubmit = () => {
+    if (!quickDestination.trim()) {
+      toast.error(language === 'fr' ? 'Veuillez saisir une destination' : 'Please enter a destination');
+      return;
+    }
+    
+    const fromDate = quickDateFrom ? format(quickDateFrom, 'dd/MM/yyyy', { locale: fr }) : '';
+    const toDate = quickDateTo ? format(quickDateTo, 'dd/MM/yyyy', { locale: fr }) : '';
+    const dateRange = fromDate && toDate ? `du ${fromDate} au ${toDate}` : fromDate ? `à partir du ${fromDate}` : '';
+    
+    const quickMessage = language === 'fr' 
+      ? `Voyage à ${quickDestination} pour ${quickPeople} personne(s), budget ${quickBudget}€${dateRange ? ', ' + dateRange : ''}`
+      : `Trip to ${quickDestination} for ${quickPeople} people, budget €${quickBudget}${dateRange ? ', ' + dateRange : ''}`;
+    
+    setShowQuickInputs(false);
+    sendMessage(quickMessage);
+  };
+
+  const resetQuickInputs = () => {
+    setQuickDestination('');
+    setQuickBudget(2000);
+    setQuickPeople('2');
+    setQuickDateFrom(undefined);
+    setQuickDateTo(undefined);
+  };
+
   // Mode inline : chat intégré dans la section hero
   if (inline) {
     return (
       <div className="w-full space-y-8 max-h-[60vh] overflow-y-auto scrollbar-hide">
+        {/* Quick Onboarding Inputs */}
+        {showQuickInputs && (
+          <Card className="p-6 bg-white/95 backdrop-blur-md border border-white/40 shadow-2xl">
+            <div className="space-y-6">
+              {/* Welcome message */}
+              <div 
+                className="text-base leading-relaxed text-gray-800"
+                dangerouslySetInnerHTML={{
+                  __html: getWelcomeMessage()
+                    .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em class="italic">$1</em>')
+                    .replace(/\n\n/g, '</p><p class="mt-3">')
+                    .replace(/^/, '<p>')
+                    .replace(/$/, '</p>')
+                }}
+              />
+              
+              <h3 className="text-lg font-semibold text-gray-800 mb-4 border-t pt-4">
+                {language === 'fr' ? 'Dites-moi vos envies de voyage' : 'Tell me about your travel plans'}
+              </h3>
+              
+              {/* Destination */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {language === 'fr' ? 'Destination' : 'Destination'}
+                </label>
+                <Input
+                  placeholder={language === 'fr' ? 'Ex: Bali, Paris, Tokyo...' : 'Ex: Bali, Paris, Tokyo...'}
+                  value={quickDestination}
+                  onChange={(e) => setQuickDestination(e.target.value)}
+                  className="bg-white/80"
+                />
+              </div>
+
+              {/* Budget Input */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Euro className="h-4 w-4" />
+                  {language === 'fr' ? 'Budget max' : 'Max budget'}
+                </label>
+                <Input
+                  type="number"
+                  placeholder="2000"
+                  value={quickBudget}
+                  onChange={(e) => setQuickBudget(parseInt(e.target.value) || 0)}
+                  className="bg-white/80"
+                  min={0}
+                />
+              </div>
+
+              {/* Number of People */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  {language === 'fr' ? 'Nombre de personnes' : 'Number of people'}
+                </label>
+                <Select value={quickPeople} onValueChange={setQuickPeople}>
+                  <SelectTrigger className="bg-white/80">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 {language === 'fr' ? 'personne' : 'person'}</SelectItem>
+                    <SelectItem value="2">2 {language === 'fr' ? 'personnes' : 'people'}</SelectItem>
+                    <SelectItem value="3">3 {language === 'fr' ? 'personnes' : 'people'}</SelectItem>
+                    <SelectItem value="4">4 {language === 'fr' ? 'personnes' : 'people'}</SelectItem>
+                    <SelectItem value="5">5 {language === 'fr' ? 'personnes' : 'people'}</SelectItem>
+                    <SelectItem value="6">6+ {language === 'fr' ? 'personnes' : 'people'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    {language === 'fr' ? 'Date de départ' : 'From date'}
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal bg-white/80 ${
+                          !quickDateFrom && "text-muted-foreground"
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {quickDateFrom ? format(quickDateFrom, "dd/MM/yyyy", { locale: fr }) : 
+                          (language === 'fr' ? 'Choisir une date' : 'Pick a date')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={quickDateFrom}
+                        onSelect={setQuickDateFrom}
+                        disabled={(date) => date < new Date()}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-700">
+                    {language === 'fr' ? 'Date de retour' : 'To date'}
+                  </label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={`w-full justify-start text-left font-normal bg-white/80 ${
+                          !quickDateTo && "text-muted-foreground"
+                        }`}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {quickDateTo ? format(quickDateTo, "dd/MM/yyyy", { locale: fr }) : 
+                          (language === 'fr' ? 'Choisir une date' : 'Pick a date')}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={quickDateTo}
+                        onSelect={setQuickDateTo}
+                        disabled={(date) => date < (quickDateFrom || new Date())}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </div>
+
+              {/* Action buttons */}
+              <div className="flex gap-3 pt-4">
+                <Button onClick={handleQuickSubmit} className="flex-1">
+                  {language === 'fr' ? 'Rechercher' : 'Search'}
+                </Button>
+                <Button variant="outline" onClick={() => setShowQuickInputs(false)}>
+                  {language === 'fr' ? 'Annuler' : 'Cancel'}
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         {/* Messages Container */}
         <div className="space-y-6">
           {messages.map((message) => (
@@ -594,17 +753,15 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
               {language === 'fr' ? 'Nouveau voyage' : 'New trip'}
             </Button>
             
-            {canArchive && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={archiveConversation}
-                className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 hover:bg-green-100"
-              >
-                <Archive className="h-4 w-4" />
-                {language === 'fr' ? 'Sauvegarder' : 'Save trip'}
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={archiveConversation}
+              className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 hover:bg-green-100"
+            >
+              <Archive className="h-4 w-4" />
+              {language === 'fr' ? 'Archiver le trip' : 'Archive trip'}
+            </Button>
           </div>
         )}
 

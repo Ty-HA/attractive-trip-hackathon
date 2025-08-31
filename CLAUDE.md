@@ -174,3 +174,15 @@ Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.
 ALWAYS prefer editing an existing file to creating a new one.
 NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+
+## File Naming Convention
+
+**IMPORTANT**: Always use English names for new files and components. Avoid French names going forward.
+
+Examples:
+- ✅ `TripHistory.tsx` instead of `MesVoyages.tsx`
+- ✅ `trip-archive/` instead of `mes-voyages/` 
+- ✅ `UserTrips.tsx` instead of `VoyagesUtilisateur.tsx`
+- ✅ `BookingDetails.tsx` instead of `DetailsReservation.tsx`
+
+This ensures consistency and international compatibility. Existing French-named files can remain but all new files should use English naming.
