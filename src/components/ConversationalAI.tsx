@@ -1339,6 +1339,21 @@ MESSAGE UTILISATEUR: ${textToSend}`;
                 {language === 'fr' ? 'Dites-moi vos envies de voyage' : 'Tell me about your travel plans'}
               </h3>
 
+              {/* Hackathon POC Notice */}
+              <div className="mb-4 p-3 bg-orange-50/80 border border-orange-200/50 rounded-lg">
+                <div className="text-xs text-orange-700 text-center">
+                  <div className="font-semibold flex items-center justify-center gap-1">
+                    🧪 {language === 'fr' ? 'VERSION TEST - HACKATHON POC' : 'TEST VERSION - HACKATHON POC'}
+                  </div>
+                  <div className="mt-1 text-orange-600">
+                    {language === 'fr' 
+                      ? 'Projet en développement créé pour le hackathon AI Paris. Fonctionnalités de démonstration uniquement.'
+                      : 'Development project created for AI Paris hackathon. Demo features only.'
+                    }
+                  </div>
+                </div>
+              </div>
+
               {/* Voice Chat Toggle Button */}
               <div className="mb-6 text-center">
                 <Button
