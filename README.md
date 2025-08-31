@@ -92,7 +92,7 @@ npx supabase start
 npx supabase db reset
 ```
 
-Visit `http://localhost:5173` and start chatting with your AI travel assistant!
+Visit `http://localhost:8080` and start chatting with your AI travel assistant!
 
 ---
 
