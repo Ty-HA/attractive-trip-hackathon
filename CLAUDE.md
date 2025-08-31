@@ -111,16 +111,45 @@ The `LanguageContext` contains extensive translations for French and English, in
 - Admin dashboard for content management
 - Protected routes and role-based access
 
-## Database Schema
+## Supabase Edge Functions
+
+### travel-concierge Function
+
+The main AI backend function powered by Perplexity API:
+
+#### Environment Requirements
+- `PERPLEXITY_API_KEY` - Perplexity API key for intelligent search
+- `SUPABASE_URL` - Supabase project URL
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key for database access
+
+#### Function Capabilities
+- **Conversational AI**: Natural language processing with context awareness
+- **Multi-language Support**: French/English system prompts and responses
+- **Slot-filling Logic**: Progressive information gathering for travel preferences
+- **Search Integration**: Real-time travel data aggregation and recommendations
+- **Database Integration**: User preferences and conversation history management
+
+### Database Schema
 
 The application uses Supabase with the following main tables:
 
+#### Core Travel Data
 - **destinations** - Travel destinations with location data, pricing, and metadata
 - **activities** - Activities linked to destinations with booking details
 - **packages** - Travel packages combining destinations and services
 - **restaurants** - Restaurant information linked to destinations and packages
+
+#### User Management & Personalization
 - **profiles** - User profiles extending auth.users
 - **user_roles** - Role-based access control system
+- **user_preferences** - Onboarding slot-filling data and travel preferences
+- **archived_conversations** - Complete trip planning sessions with metadata
+- **chat_history** - Real-time conversation storage for context continuity
+
+#### Advanced Features
+- **Vector embeddings support** - pgvector extension for similarity search (RAG system ready)
+- **Real-time subscriptions** - Live chat and preference updates
+- **Row Level Security** - User-specific data isolation and access control
 
 ## Configuration Files
 
@@ -131,42 +160,86 @@ The application uses Supabase with the following main tables:
 - `tsconfig.json` - TypeScript configuration
 - `postcss.config.js` - PostCSS configuration for Tailwind CSS
 
-## Onboarding System & Trip Management
+## AI-Powered Travel Concierge System
 
-### Intelligent Onboarding Flow
+### Conversational AI Architecture
 
-The app features a comprehensive slot-filling onboarding system that guides users through personalized trip planning:
+The application features an advanced conversational AI system powered by Perplexity API that transforms travel planning into natural dialogue:
 
-#### Core Features
-- **Smart slot-filling**: Asks questions one by one to gather preferences (trip_type, companions, duration, budget, origin_city)
-- **Quick replies**: Interactive buttons for common choices (City-break, Beach, Nature, etc.)
-- **Adaptive logic**: Family trips → asks for children ages, low budget + long duration → suggests alternatives
-- **Conversation persistence**: Saves preferences in `user_preferences` table
-- **Personalized recommendations**: Generates 3 options (Good/Better/Best) based on user slots
+#### Voice-Enabled Interaction
+- **Speech Recognition**: Browser Web Speech API integration for hands-free interaction
+- **Text-to-Speech**: AI responses spoken aloud for immersive conversation
+- **Intelligent Form Filling**: Voice input automatically populates form fields (destination, budget, dates, people)
+- **Conversation Flow Control**: AI stops speaking when user talks, preventing feedback loops
+- **Multi-language Voice Support**: French/English speech recognition and synthesis
 
-#### Database Tables
-- **user_preferences**: Stores onboarding slots and completion status
-- **archived_conversations**: Complete trip archives with metadata
-- **chat_history**: Real-time conversation storage
+#### Smart Form Integration
+- **Visual + Voice Input**: Traditional form inputs enhanced with voice recognition
+- **Real-time Extraction**: Parses natural language to extract structured data
+- **Pattern Recognition**: Handles complex date formats ("du 5 au 10 septembre"), budget ranges, travel group sizes
+- **Form Persistence**: Visual form stays populated as conversation continues
 
-#### Trip Management
-- **Archive System**: Save completed onboarding sessions as trips with auto-generated titles
-- **Reset Function**: Clear current conversation and start fresh onboarding  
-- **Trip History**: View all saved trips with filtering (planned/booked/completed)
-- **Status Tracking**: planned → booking_started → booked → completed
+#### Intelligent Trip Planning
+- **Contextual Understanding**: Maintains conversation context across interactions
+- **Progressive Information Gathering**: AI asks essential questions (budget, duration, dates, people) before detailed suggestions
+- **Adaptive Responses**: Tailors conversation style based on user preferences
+- **Multi-modal Feedback**: Both visual form updates and conversational responses
+
+### Database Schema & Trip Management
+
+#### Core Tables
+- **user_preferences**: Stores onboarding slots and completion status with slot-filling logic
+- **archived_conversations**: Complete trip archives with auto-generated titles and metadata
+- **chat_history**: Real-time conversation storage for context continuity
+
+#### Advanced Features
+- **Smart Trip Archiving**: Automatic title generation from conversation content
+- **Trip Status Tracking**: planned → booking_started → booked → completed progression
+- **Conversation Context**: Full chat history maintains conversation continuity
+- **Form Data Integration**: Combines visual form data with conversational context
+
+### Edge Function Architecture (travel-concierge)
+
+The Supabase Edge Function serves as the intelligent backend:
+
+#### Core Capabilities
+- **Perplexity API Integration**: Real-time web intelligence for travel recommendations
+- **Slot-filling Logic**: Structured onboarding with essential information gathering
+- **Context Management**: Conversation history and user preferences integration
+- **Multi-language Support**: Intelligent responses in French and English
+- **Search Intelligence**: Transforms travel queries into actionable recommendations
+
+#### Key Functions
+- **Natural Language Processing**: Converts user requests into structured travel data
+- **Recommendation Engine**: Generates personalized travel options based on preferences
+- **Conversation Flow Management**: Maintains dialogue context and progression
+- **Data Persistence**: Saves user preferences and conversation history
 
 ### Key Components
-- **ConversationalAI.tsx**: Main chat interface with onboarding logic and trip management buttons
-- **MesVoyages.tsx**: Trip history page with filtering, favorites, and trip management
-- **Edge Function**: PlannerAgent handles slot-filling, recommendations, and trip archiving
 
-### User Flow
-1. User starts chat → Automatic onboarding with quick replies
-2. AI asks questions sequentially → Fills essential slots  
-3. When complete → Shows 3 personalized recommendations
-4. User can "Save trip" → Archives conversation with metadata
-5. "New trip" button → Resets for fresh onboarding
-6. "My trips" → View complete trip history with actions
+#### ConversationalAI.tsx - Main Chat Interface
+- **Voice Recognition System**: Complete speech-to-text implementation
+- **Form Auto-filling**: Voice input automatically populates visual form
+- **Conversation Management**: Real-time chat with AI response handling
+- **Trip Management**: Archive, reset, and history navigation
+- **Multi-modal Interaction**: Seamless switching between voice and text input
+
+#### Voice Integration Features
+- **Continuous Recognition**: Extended listening periods for complete sentences
+- **Smart Filtering**: Prevents AI-generated text from being re-processed
+- **Context Awareness**: Integrates voice input with existing form data
+- **Feedback Prevention**: Stops recognition during AI speech synthesis
+- **Error Handling**: Comprehensive permission and browser compatibility management
+
+### User Experience Flow
+
+1. **Initial Interaction**: User sees form with voice control button
+2. **Voice Activation**: Click microphone or "AI Voice Chat" button
+3. **Natural Conversation**: Speak travel desires naturally ("Je veux aller à Bali pour 2 personnes budget 3000 euros")
+4. **Intelligent Processing**: AI extracts structured data and fills form automatically
+5. **Contextual Response**: AI responds both in text and optionally voice
+6. **Progressive Refinement**: AI asks clarifying questions for missing essential information
+7. **Trip Creation**: Complete conversation can be archived with smart title generation
 
 ## important-instruction-reminders
 

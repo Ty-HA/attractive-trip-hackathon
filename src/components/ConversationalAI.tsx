@@ -145,8 +145,8 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
   // Quick onboarding states  
   const [showQuickInputs, setShowQuickInputs] = useState(true); // Always show form
   const [quickDestination, setQuickDestination] = useState('');
-  const [quickBudget, setQuickBudget] = useState(2000);
-  const [quickPeople, setQuickPeople] = useState('2');
+  const [quickBudget, setQuickBudget] = useState(0);
+  const [quickPeople, setQuickPeople] = useState('');
   const [quickDateFrom, setQuickDateFrom] = useState<Date | undefined>(undefined);
   const [quickDateTo, setQuickDateTo] = useState<Date | undefined>(undefined);
 
@@ -211,6 +211,15 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
     }
 
     try {
+      // Debug: Log current form values
+      console.log('🔍 Current form values at sendMessage:', {
+        quickDestination,
+        quickBudget,
+        quickPeople,
+        quickDateFrom: quickDateFrom?.toLocaleDateString('fr-FR'),
+        quickDateTo: quickDateTo?.toLocaleDateString('fr-FR')
+      });
+
       // Build context from form data
       const formContext = [];
       if (quickDestination) formContext.push(`Destination confirmée: ${quickDestination}`);
@@ -218,6 +227,8 @@ const ConversationalAI = ({ inline = false, mobile = false }: ConversationalAIPr
       if (quickPeople) formContext.push(`Nombre de personnes confirmé: ${quickPeople}`);
       if (quickDateFrom) formContext.push(`Date de départ confirmée: ${quickDateFrom.toLocaleDateString('fr-FR')}`);
       if (quickDateTo) formContext.push(`Date de retour confirmée: ${quickDateTo.toLocaleDateString('fr-FR')}`);
+      
+      console.log('📋 Form context being sent:', formContext);
       
       let contextualMessage;
       if (formContext.length > 0) {
@@ -229,6 +240,8 @@ MESSAGE UTILISATEUR: ${textToSend}`;
       } else {
         contextualMessage = textToSend;
       }
+
+      console.log('📤 Final message sent to AI:', contextualMessage);
 
       const { data, error } = await supabase.functions.invoke('travel-concierge', {
         body: {
@@ -383,42 +396,9 @@ MESSAGE UTILISATEUR: ${textToSend}`;
       console.log('📅 Updated date to:', extractedData.dates.to);
     }
     
-    // If voice chat is enabled, have a conversation
-    if (isVoiceChatEnabledRef.current) {
-      console.log('🗣️ Voice chat enabled, automatically sending message to AI');
-      
-      // Send the transcript directly to the AI
-      setTimeout(() => {
-        console.log('📤 Auto-sending transcript to AI:', transcript);
-        
-        // Create user message
-        const userMessage: Message = {
-          id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
-          text: transcript,
-          sender: 'user',
-          timestamp: new Date()
-        };
-        
-        // Add user message to chat
-        setMessages(prev => [...prev, userMessage]);
-        
-        // Auto-send to AI
-        sendMessage(transcript);
-      }, 200);
-    } else {
-      console.log('📝 Voice chat disabled, sending to AI without voice response');
-      
-      // Always send to AI, just don't use voice response
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        text: transcript,
-        sender: 'user',
-        timestamp: new Date()
-      };
-      
-      setMessages(prev => [...prev, userMessage]);
-      sendMessage(transcript);
-    }
+    // Send message to AI if form data was extracted successfully or if voice chat is enabled
+    console.log('📤 Auto-sending transcript to AI after form extraction:', transcript);
+    sendMessage(transcript);
   }, [quickDestination, sendMessage]);
 
   // Text-to-speech function
@@ -445,32 +425,18 @@ MESSAGE UTILISATEUR: ${textToSend}`;
     };
     
     utterance.onend = () => {
-      console.log('✅ AI finished speaking, restarting recognition');
+      console.log('✅ AI finished speaking, NOT restarting recognition automatically');
       setIsSpeaking(false);
       
-      // Restart speech recognition after AI finishes speaking
-      if (isVoiceChatEnabled && recognitionRef.current) {
-        setTimeout(() => {
-          if (isVoiceChatEnabledRef.current && recognitionRef.current) {
-            console.log('🔄 Restarting speech recognition after AI speech');
-            recognitionRef.current.start();
-          }
-        }, 1000); // Increased delay to 1 second to avoid overlaps
-      }
+      // Don't automatically restart recognition - user needs to manually click microphone
+      // This prevents the AI from continuously listening and creating feedback loops
     };
     
     utterance.onerror = () => {
-      console.log('❌ AI speech error, restarting recognition');
+      console.log('❌ AI speech error, NOT restarting recognition');
       setIsSpeaking(false);
       
-      // Restart recognition even on error
-      if (isVoiceChatEnabled && recognitionRef.current) {
-        setTimeout(() => {
-          if (isVoiceChatEnabledRef.current && recognitionRef.current) {
-            recognitionRef.current.start();
-          }
-        }, 1000); // Increased delay for error recovery too
-      }
+      // Don't automatically restart on error either
     };
     
     window.speechSynthesis.speak(utterance);
@@ -547,56 +513,9 @@ MESSAGE UTILISATEUR: ${textToSend}`;
           // Clear transcript after getting it
           finalTranscriptRef.current = '';
           
-          // Process the voice input inline
-          console.log('🔄 Processing voice input:', transcript);
-          
-          // Extract form data from transcript
-          const extractedData = extractFormDataFromText(transcript);
-          console.log('📊 Extracted data from "' + transcript + '":', extractedData);
-          
-          // Update form fields if data was extracted
-          if (extractedData.destination) {
-            console.log('🎯 Before setQuickDestination, current value:', quickDestination);
-            setQuickDestination(extractedData.destination);
-            console.log('🎯 Updated destination:', extractedData.destination);
-            // Verify the state is updated
-            setTimeout(() => {
-              console.log('🔍 Checking destination state after update - should be:', extractedData.destination);
-            }, 50);
-          }
-          if (extractedData.budget) {
-            setQuickBudget(extractedData.budget);
-            console.log('💰 Updated budget:', extractedData.budget);
-          }
-          if (extractedData.people) {
-            setQuickPeople(extractedData.people);
-            console.log('👥 Updated people:', extractedData.people);
-          }
-          
-          // If voice chat is enabled, have a conversation
-          if (isVoiceChatEnabledRef.current) {
-            console.log('🗣️ Voice chat enabled, will send message to AI');
-            // Keep quick inputs visible - don't hide the form
-            // setShowQuickInputs(false); // Commented out to keep form visible
-            
-            // Send message to AI with the transcript
-            console.log('📤 Sending transcript to AI:', transcript);
-            // Use a different approach to avoid useEffect dependency issues
-            // We'll just add the message to the chat without hiding the form
-          } else {
-            console.log('📝 Voice chat disabled, sending to AI without voice response');
-            
-            // Always send to AI, just don't use voice response
-            const userMessage: Message = {
-              id: Date.now().toString(),
-              text: transcript,
-              sender: 'user',
-              timestamp: new Date()
-            };
-            
-            setMessages(prev => [...prev, userMessage]);
-            sendMessage(transcript);
-          }
+          // Process the voice input using the shared function
+          console.log('🔄 Processing voice input in onend:', transcript);
+          processTranscript(transcript);
         } else {
           console.log('No final transcript to process');
         }
@@ -691,10 +610,10 @@ MESSAGE UTILISATEUR: ${textToSend}`;
           
           speechTimeoutRef.current = setTimeout(() => {
             if (recognitionInstance && isListeningRef.current) {
-              console.log('Stopping recognition due to timeout');
+              console.log('Stopping recognition due to timeout - user finished speaking');
               recognitionInstance.stop();
             }
-          }, 4000); // Increased to 4 seconds to let you finish your sentence
+          }, 2000); // Reduced to 2 seconds - stop listening faster when user stops talking
         }
       };
       
@@ -751,12 +670,12 @@ MESSAGE UTILISATEUR: ${textToSend}`;
     
     // Extract destination (look for "to", "à", "en", etc.)
     const destinationPatterns = [
-      /(?:aller|voyager|partir|voyage)\s+(?:à|en|au|aux|vers|dans)\s+([a-zàâäéèêëïîôöùûüÿ\s]+?)(?:\s+(?:du|le|pour|et|$)|,|\.|!|\?)/i,
-      /(?:je veux aller|je vais|on va|nous allons|destination)\s+(?:à|en|au|aux|vers|dans)?\s*([a-zàâäéèêëïîôöùûüÿ\s]+?)(?:\s+(?:du|le|pour|et|est|$)|,|\.|!|\?)/i,
-      /(?:i want to go|want to go|going|trip to)\s+(?:to)?\s*([a-zàâäéèêëïîôöùûüÿ\s]+?)(?:\s+(?:from|for|is|$)|,|\.|!|\?)/i,
-      /(?:destination|dest)\s*:?\s*([a-zàâäéèêëïîôöùûüÿ\s]+?)(?:\s+(?:du|le|pour|et|est|$)|,|\.|!|\?)/i,
+      /(?:aller|voyager|partir|voyage)\s+(?:à|en|au|aux|vers|dans)\s+([a-zàâäéèêëïîôöùûüÿ\s-]+?)(?:\s+(?:du|le|pour|et|$)|,|\.|!|\?)/i,
+      /(?:je veux aller|je vais|on va|nous allons|destination)\s+(?:à|en|au|aux|vers|dans)?\s*([a-zàâäéèêëïîôöùûüÿ\s-]+?)(?:\s+(?:du|le|pour|et|est|$)|,|\.|!|\?)/i,
+      /(?:i want to go|want to go|going|trip to)\s+(?:to)?\s*([a-zàâäéèêëïîôöùûüÿ\s-]+?)(?:\s+(?:from|for|is|$)|,|\.|!|\?)/i,
+      /(?:destination|dest)\s*:?\s*([a-zàâäéèêëïîôöùûüÿ\s-]+?)(?:\s+(?:du|le|pour|et|est|$)|,|\.|!|\?)/i,
       // Comprehensive city list including French cities
-      /(tokyo|paris|londres|london|bali|new york|rome|madrid|berlin|barcelone|barcelona|amsterdam|prague|vienne|vienna|budapest|lisbonne|lisbon|dublin|édimbourg|edinburgh|stockholm|copenhague|copenhagen|oslo|helsinki|reykjavik|zurich|genève|geneva|milan|florence|venise|venice|naples|athènes|athens|santorin|santorini|mykonos|istanbul|le caire|cairo|marrakech|casablanca|dubaï|dubai|mumbai|delhi|bangkok|singapour|singapore|hong kong|séoul|seoul|sydney|melbourne|toronto|vancouver|montréal|montreal|chicago|miami|las vegas|mexico|buenos aires|rio|lima|santiago|bogota|caracas|havane|havana|nassau|kingston|san juan|bordeaux|lyon|marseille|toulouse|nice|nantes|strasbourg|montpellier|lille|rennes|reims|saint-étienne|toulon|grenoble|dijon|angers|nîmes|villeurbanne|cannes|antibes|avignon)/i
+      /(tokyo|paris|londres|london|bali|new york|rome|madrid|berlin|barcelone|barcelona|amsterdam|prague|vienne|vienna|budapest|lisbonne|lisbon|dublin|édimbourg|edinburgh|stockholm|copenhague|copenhagen|oslo|helsinki|reykjavik|zurich|genève|geneva|milan|florence|venise|venice|naples|athènes|athens|santorin|santorini|mykonos|istanbul|le caire|cairo|marrakech|casablanca|dubaï|dubai|mumbai|delhi|bangkok|singapour|singapore|hong kong|séoul|seoul|sydney|melbourne|toronto|vancouver|montréal|montreal|chicago|miami|las vegas|mexico|buenos aires|rio|lima|santiago|bogota|caracas|havane|havana|nassau|kingston|san juan|bordeaux|lyon|marseille|toulouse|nice|nantes|strasbourg|montpellier|lille|rennes|reims|saint-étienne|toulon|grenoble|dijon|angers|nîmes|villeurbanne|cannes|antibes|avignon|saint-malo|brest|quimper|vannes|lorient|saint-nazaire|la baule|dinard|deauville|honfleur|rouen|caen|le havre|amiens|calais|dunkerque)/i
     ];
     
     for (const pattern of destinationPatterns) {
@@ -1001,17 +920,8 @@ MESSAGE UTILISATEUR: ${textToSend}`;
     setIsVoiceChatEnabled(!isVoiceChatEnabled);
     
     if (!isVoiceChatEnabled) {
-      // Turning ON - start welcome message
-      toast.success(language === 'fr' ? 'Mode vocal activé - Parlez-moi !' : 'Voice mode enabled - Talk to me!');
-      
-      // Start with a voice greeting
-      const greeting = language === 'fr' 
-        ? 'Bonjour ! Je suis votre assistant de voyage. Où souhaitez-vous aller ?'
-        : 'Hello! I\'m your travel assistant. Where would you like to go?';
-      
-      setTimeout(() => {
-        speakText(greeting);
-      }, 500);
+      // Turning ON - just enable voice mode, don't auto-speak
+      toast.success(language === 'fr' ? 'Mode vocal activé - Cliquez sur le micro pour parler' : 'Voice mode enabled - Click microphone to speak');
       
     } else {
       // Turning OFF
@@ -1385,8 +1295,8 @@ MESSAGE UTILISATEUR: ${textToSend}`;
 
   const resetQuickInputs = () => {
     setQuickDestination('');
-    setQuickBudget(2000);
-    setQuickPeople('2');
+    setQuickBudget(0);
+    setQuickPeople('');
     setQuickDateFrom(undefined);
     setQuickDateTo(undefined);
   };
@@ -1513,8 +1423,8 @@ MESSAGE UTILISATEUR: ${textToSend}`;
                 </label>
                 <Input
                   type="number"
-                  placeholder="2000"
-                  value={quickBudget}
+                  placeholder="ex: 1500"
+                  value={quickBudget || ''}
                   onChange={(e) => setQuickBudget(parseInt(e.target.value) || 0)}
                   className="bg-white/80"
                   min={0}
@@ -1529,7 +1439,7 @@ MESSAGE UTILISATEUR: ${textToSend}`;
                 </label>
                 <Select value={quickPeople} onValueChange={setQuickPeople}>
                   <SelectTrigger className="bg-white/80">
-                    <SelectValue />
+                    <SelectValue placeholder={language === 'fr' ? 'Choisir...' : 'Select...'} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">1 {language === 'fr' ? 'personne' : 'person'}</SelectItem>
